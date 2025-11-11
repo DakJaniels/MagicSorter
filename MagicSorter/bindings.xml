@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Bindings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/DakJaniels/esoui_gui_xsd/main/esobindings.xsd">
+<Bindings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/DakJaniels/esoui_gui_xsd/main/esobindings.xsd">
     <Layer name="SI_KEYBINDINGS_LAYER_GENERAL">
         <Category name="Magic Sorter">
             <Action name="MAGIC_SORTER">
