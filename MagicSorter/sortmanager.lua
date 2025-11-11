@@ -620,7 +620,11 @@ function MSortManager:GetFurnitureCategoryByFurnitureId(furnitureId)
     if not collectibleLink or collectibleLink == "" then
         local _, _, furnitureDataId = GetPlacedHousingFurnitureInfo(furnitureId)
         local categoryId, subcategoryId, themeId, limitId = GetFurnitureDataInfo(furnitureDataId)
-        if categoryId and categoryId ~= 0 and subcategoryId ~= 0 then
+        if categoryId and categoryId ~= 0 then
+            -- If subcategoryId is 0 or nil, use categoryId for both (parent category items)
+            if not subcategoryId or subcategoryId == 0 then
+                subcategoryId = categoryId
+            end
             return categoryId, subcategoryId, themeId or 0, limitId
         end
     end
@@ -630,7 +634,11 @@ end
 function MSortManager:GetFurnitureCategoryByBagAndSlot(bagId, slotIndex)
     local furnitureDataId = GetItemFurnitureDataId(bagId, slotIndex)
     local categoryId, subcategoryId, themeId, limitId = GetFurnitureDataInfo(furnitureDataId)
-    if categoryId and categoryId ~= 0 and subcategoryId ~= 0 then
+    if categoryId and categoryId ~= 0 then
+        -- If subcategoryId is 0 or nil, use categoryId for both (parent category items)
+        if not subcategoryId or subcategoryId == 0 then
+            subcategoryId = categoryId
+        end
         return categoryId, subcategoryId, themeId or 0, limitId
     end
     return nil
@@ -926,13 +934,28 @@ do
                 local furnitureDataId = GetItemFurnitureDataId(bagId, slotIndex)
                 local _, _, _, limitType = GetFurnitureDataInfo(furnitureDataId)
                 if self:IsFurniturePlaceable(bagId, slotIndex) and self:IsFurniturePlaceableInHouse(houseId, categoryId, subcategoryId, themeId) and (not filterLimitType or filterLimitType == limitType) then
-                    if limitType == HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM and capacityTraditional and capacityTraditional > 0 then
-                        local stackSize = GetSlotStackSize(bagId, slotIndex)
-                        capacityTraditional = capacityTraditional - stackSize
-                        table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = bagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType })
-                    elseif limitType == HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM and capacitySpecial and capacitySpecial > 0 then
-                        local stackSize = GetSlotStackSize(bagId, slotIndex)
-                        capacitySpecial = capacitySpecial - stackSize
+                    local stackSize = GetSlotStackSize(bagId, slotIndex)
+                    local shouldAdd = false
+                    
+                    if limitType == HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM then
+                        if capacityTraditional and capacityTraditional > 0 then
+                            capacityTraditional = capacityTraditional - stackSize
+                            shouldAdd = true
+                        end
+                    elseif limitType == HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM then
+                        if capacitySpecial and capacitySpecial > 0 then
+                            capacitySpecial = capacitySpecial - stackSize
+                            shouldAdd = true
+                        end
+                    else
+                        -- Handle items with nil or unknown limitType - treat as placeable if house has any capacity
+                        -- This fixes items being ignored when limitType is missing or unexpected
+                        if (capacityTraditional and capacityTraditional > 0) or (capacitySpecial and capacitySpecial > 0) then
+                            shouldAdd = true
+                        end
+                    end
+                    
+                    if shouldAdd then
                         table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = bagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType })
                     end
                 end
