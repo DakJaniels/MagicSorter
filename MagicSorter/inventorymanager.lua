@@ -1,6 +1,11 @@
 ---@class MInventoryManager : ZO_InitializingObject
 local MInventoryManager = ZO_InitializingObject:Subclass()
 
+-- Localize standard Lua API functions for performance
+local string_rep = string.rep
+local string_format = string.format
+local table_insert = table.insert
+
 function InstantiateMagicInventoryManager(dataManager)
     local manager = MInventoryManager:New(dataManager)
     return manager
@@ -98,7 +103,7 @@ function MInventoryManager:GetItemIdLink(itemId)
         if itemId < 0 then
             itemId = -itemId
         end
-        return "|" .. "H1:item:" .. tostring(itemId) .. string.rep(":0", 20) .. "|h|h"
+        return "|" .. "H1:item:" .. tostring(itemId) .. string_rep(":0", 20) .. "|h|h"
     end
 end
 
@@ -528,7 +533,8 @@ function MInventoryManager:QueryInventoryItems(inventory, query)
             ZO_DeepTableCopy(query, copy)
             query = copy
         end
-        for _, item in ipairs(inventory) do
+        for i = 1, #inventory do
+            local item = inventory[i]
             local link, categoryId, subcategoryId, themeId, limitId = self:GetFurnitureItemIdInfo(item.itemId)
             if link and link ~= "" and categoryId and categoryId ~= 0 then
                 local include = true
@@ -569,7 +575,8 @@ function MInventoryManager:QueryInventoryItems(inventory, query)
                     if matchedLimit then
                         query.limits[limitId] = query.limits[limitId] - 1
                     end
-                    table.insert(results, item)
+                    local resultsCount = #results + 1
+                    results[resultsCount] = item
                 end
             end
         end
@@ -610,7 +617,7 @@ function MInventoryManager:AppendFurnitureTooltipInfo(control, itemLink)
         local themeName = self:GetDataManager():GetSortManager().FurnitureThemes[themeId] or ""
         local addDivider = true
         if subcategoryName ~= "" then
-            local info = string.format("|cddddbb%s|r\n|cffffff%s |caaaaaa/|cffffff %s|r", "Category / Subcategory", categoryName, subcategoryName)
+            local info = string_format("|cddddbb%s|r\n|cffffff%s |caaaaaa/|cffffff %s|r", "Category / Subcategory", categoryName, subcategoryName)
             if addDivider then
                 ZO_Tooltip_AddDivider(control)
                 addDivider = false
@@ -618,7 +625,7 @@ function MInventoryManager:AppendFurnitureTooltipInfo(control, itemLink)
             control:AddLine(info, "$(MEDIUM_FONT)|$(KB_16)", nil, nil, nil, nil, nil, TEXT_ALIGN_CENTER)
         end
         if themeName ~= "" then
-            local info = string.format("|cddddbb%s|r\n|cffffff%s|r", "Style", themeName)
+            local info = string_format("|cddddbb%s|r\n|cffffff%s|r", "Style", themeName)
             if addDivider then
                 ZO_Tooltip_AddDivider(control)
                 addDivider = false

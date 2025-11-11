@@ -1597,7 +1597,8 @@
 				self.Refresh = function()
 					local houses = MAGIC_SORTER:GetOwnedHouses()
 					local optionIndex = 0
-					for houseIndex, house in ipairs(houses) do
+					for houseIndex = 1, #houses do
+						local house = houses[houseIndex]
 						local houseStats = MAGIC_SORTER:GetInventoryManager():GetHouseStatistics(house.houseId)
 						local optionButton = self.optionButtons[houseIndex]
 						if not optionButton then
@@ -1651,9 +1652,12 @@
 				end
 				self.GetSelectedHouses = function()
 					local houses = {}
-					for houseIndex, optionButton in ipairs(self.optionButtons) do
+					local housesCount = 0
+					for houseIndex = 1, #self.optionButtons do
+						local optionButton = self.optionButtons[houseIndex]
 						if optionButton.house and optionButton:IsSelected() then
-							table.insert(houses, optionButton.house)
+							housesCount = housesCount + 1
+							houses[housesCount] = optionButton.house
 						end
 					end
 					return houses
@@ -1968,13 +1972,17 @@
 						end
 					end
 					local sortedBoxes = {}
+					local sortedBoxesCount = 0
 					for _, houseBox in pairs(self.houseBoxes) do
-						table.insert(sortedBoxes, houseBox)
+						sortedBoxesCount = sortedBoxesCount + 1
+						sortedBoxes[sortedBoxesCount] = houseBox
 					end
 					table.sort(sortedBoxes, function(boxA, boxB) return boxB.house.houseName > boxA.house.houseName end)
 					local houseY = 6
                     local tagY
-					for houseIndex, houseBox in ipairs(sortedBoxes) do
+					local sortedBoxesCountFinal = #sortedBoxes
+					for houseIndex = 1, sortedBoxesCountFinal do
+						local houseBox = sortedBoxes[houseIndex]
 						local houseId = houseBox.house.houseId
 						houseBox:ClearAnchors()
 						if activeHouses[houseId] then
@@ -2003,14 +2011,16 @@
 								local tooltipThemes
 								if themes then
 									local themeNames = MAGIC_SORTER:GetSortManager().FurnitureThemes
-									local themeList = {}
-									for themeId in pairs(themes) do
-										table.insert(themeList, themeNames[themeId] or "")
-									end
-									table.sort(themeList)
-									if #themeList > 0 then
-										tooltipThemes = table.concat(themeList, "\n")
-									end
+								local themeList = {}
+								local themeListCount = 0
+								for themeId in pairs(themes) do
+									themeListCount = themeListCount + 1
+									themeList[themeListCount] = themeNames[themeId] or ""
+								end
+								table.sort(themeList)
+								if themeListCount > 0 then
+									tooltipThemes = table.concat(themeList, "\n")
+								end
 								end
 								houseBox.overlay.tooltip = string.format("%s%s", tooltipLimits, tooltipThemes and string.format("\n\n%s", tooltipThemes) or "")
 								houseBox.overlay:SetHidden(false)
@@ -2025,15 +2035,20 @@
 							local assignedCategories = MAGIC_SORTER:GetHouseCategoryAssignments(houseId)
 							local assignedParentCategories = {}
 							local assignedCategoryTable = {}
-							for _, category in ipairs(assignedCategories) do
-								table.insert(assignedCategoryTable, category)
+							local assignedCategoryTableCount = 0
+							local assignedCategoriesCount = #assignedCategories
+							for i = 1, assignedCategoriesCount do
+								local category = assignedCategories[i]
+								assignedCategoryTableCount = assignedCategoryTableCount + 1
+								assignedCategoryTable[assignedCategoryTableCount] = category
 								if category.parentId == 0 then
 									assignedParentCategories[category.id] = true
 								end
 							end
-							if #assignedCategoryTable ~= 0 then
+							if assignedCategoryTableCount ~= 0 then
 								table.sort(assignedCategoryTable, AssignedCategoryComparer)
-								for index, category in ipairs(assignedCategoryTable) do
+								for index = 1, assignedCategoryTableCount do
+									local category = assignedCategoryTable[index]
 									if not assignedParentCategories[category.parentId] then
 										--self:CreateAssignedCategory(self.houseScrollContents, houseId, category.id, category.displayName, 8, tagY, 360, 28)
 										self:CreateAssignedCategory(houseBox, houseId, category.id, category.displayName, 8, tagY, 360, 28)
@@ -2068,19 +2083,24 @@
 						if numAssignments > 0 then
 							table.sort(assignments, HouseNameComparer)
 							tooltip = string.format("Assigned House%s:|cffffff", numAssignments == 1 and "" or "s")
-							for index, house in ipairs(assignments) do
+							local assignmentsCount = #assignments
+							for index = 1, assignmentsCount do
+								local house = assignments[index]
 								tooltip = string.format("%s\n%s", tooltip, house.houseName)
 							end
 						end
 						categoryTag.tooltip = tooltip
 					end
 					local sortedTags = {}
+					local sortedTagsCount = 0
 					for _, categoryTag in pairs(self.categoryTags) do
-						table.insert(sortedTags, categoryTag)
+						sortedTagsCount = sortedTagsCount + 1
+						sortedTags[sortedTagsCount] = categoryTag
 					end
 					table.sort(sortedTags, function(tagA, tagB) return tagB.category.displayName > tagA.category.displayName end)
 					tagY = 4
-					for tagIndex, categoryTag in ipairs(sortedTags) do
+					for tagIndex = 1, sortedTagsCount do
+						local categoryTag = sortedTags[tagIndex]
 						local offsetX, width
 						if categoryTag.category.parentId == 0 then
 							offsetX, width = 0, 350
@@ -3211,12 +3231,15 @@
 						local placeables = sortManager:GetPlaceableFurnitureListForHouse(houseId)
 						local placeableCount = 0
 						if placeables then
-							for _, placeable in ipairs(placeables) do
+							local placeablesCount = #placeables
+							for i = 1, placeablesCount do
+								local placeable = placeables[i]
 								placeableCount = placeableCount + (placeable.stackSize or 1)
 							end
 						end
 						local status = {houseId = houseId, houseName = house.houseName, placeable = placeableCount, removable = removableCount}
-						table.insert(houses, status)
+						local housesCount = #houses + 1
+						houses[housesCount] = status
 					end
 					table.sort(houses, function(houseA, houseB) return houseB.houseName > houseA.houseName end)
 					local currentHouseId = GetCurrentZoneHouseId()
@@ -3229,7 +3252,9 @@
 					end
 					local previousRow
 					local maxIndex = 0
-					for index, house in ipairs(houses) do
+					local housesCountFinal = #houses
+					for index = 1, housesCountFinal do
+						local house = houses[index]
 						local control = self.statusDetailRows[index]
 						if not control then
 							control = WINDOW_MANAGER:CreateControlFromVirtual("MagicSorter_StorageProgressStatusDetailRow", self.detailScrollContents, "MagicSorter_StatusDetailRow", index)

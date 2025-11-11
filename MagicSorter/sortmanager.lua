@@ -1,8 +1,28 @@
 ---@class MSortManager : ZO_InitializingObject
 local MSortManager = ZO_InitializingObject:Subclass()
 
+-- Localize standard Lua API functions for performance
+local math_ceil = math.ceil
+local math_floor = math.floor
+local math_abs = math.abs
+local math_max = math.max
+local math_min = math.min
+local math_rad = math.rad
+local math_deg = math.deg
+local math_pi = math.pi
+local math_cos = math.cos
+local math_sin = math.sin
+local string_format = string.format
+local string_sub = string.sub
+local string_rep = string.rep
+local string_gsub = string.gsub
+local table_insert = table.insert
+local table_remove = table.remove
+local table_concat = table.concat
+local table_sort = table.sort
+
 local function Rotate2D(x, y, angle)
-    local cosine, sine = math.cos(angle), math.sin(angle)
+    local cosine, sine = math_cos(angle), math_sin(angle)
     return y * sine + x * cosine, y * cosine - x * sine
 end
 
@@ -27,39 +47,41 @@ function MSortManager:TableToString(t, output, depth)
     end
     local tType = type(t)
     if tType == "nil" then
-        table.insert(output, "nil")
+        table_insert(output, "nil")
     elseif tType == "string" then
         if #t > 20 then
-            t = string.sub(t, 1, 20) .. "..."
+            t = string_sub(t, 1, 20) .. "..."
         end
-        table.insert(output, string.format("\"%s\"", t))
+        table_insert(output, string_format("\"%s\"", t))
     elseif tType == "function" then
-        table.insert(output, "[function]")
+        table_insert(output, "[function]")
     elseif tType ~= "table" then
-        table.insert(output, tostring(t))
+        table_insert(output, tostring(t))
     else
         if depth <= 3 then
-            table.insert(output, "{")
+            table_insert(output, "{")
             for key, value in pairs(t) do
                 self:TableToString(key, output, depth + 1)
-                table.insert(output, ":")
+                table_insert(output, ":")
                 self:TableToString(value, output, depth + 1)
-                table.insert(output, ", ")
+                table_insert(output, ", ")
             end
-            table.insert(output, "}")
+            table_insert(output, "}")
         else
-            table.insert(output, "[nested table]")
+            table_insert(output, "[nested table]")
         end
     end
     if depth == 1 then
-        return table.concat(output)
+        return table_concat(output)
     end
 end
 
 function MSortManager:WriteDebug(message, ...)
     if message and self.debugEnabled then
         local params = { ... }
-        for paramIndex, param in ipairs(params) do
+        local paramsCount = #params
+        for paramIndex = 1, paramsCount do
+            local param = params[paramIndex]
             local t = type(param)
             if t == "nil" then
                 params[paramIndex] = "nil"
@@ -70,10 +92,21 @@ function MSortManager:WriteDebug(message, ...)
             end
         end
         message = "|c00ffffD]|cffffff " .. message
-        if #params == 0 then
+        if paramsCount == 0 then
             d(message)
         else
-            df(message, unpack(params))
+            -- Replace unpack with direct parameter passing for small arrays
+            if paramsCount == 1 then
+                df(message, params[1])
+            elseif paramsCount == 2 then
+                df(message, params[1], params[2])
+            elseif paramsCount == 3 then
+                df(message, params[1], params[2], params[3])
+            elseif paramsCount == 4 then
+                df(message, params[1], params[2], params[3], params[4])
+            else
+                df(message, params[1], params[2], params[3], params[4], params[5])
+            end
         end
     end
 end
@@ -84,21 +117,21 @@ function MSortManager:WriteDebugArguments(message, ...)
         if numArgs == 0 then
             self:WriteDebug(message)
         else
-            local paramFormat = numArgs == 1 and "|cffff77%s|cffffff" or (string.rep("|cffff77%s|cffffff, ", numArgs - 1) .. "|cffff77%s|cffffff")
-            self:WriteDebug(string.format("%s(%s)", message, paramFormat), ...)
+            local paramFormat = numArgs == 1 and "|cffff77%s|cffffff" or (string_rep("|cffff77%s|cffffff, ", numArgs - 1) .. "|cffff77%s|cffffff")
+            self:WriteDebug(string_format("%s(%s)", message, paramFormat), ...)
         end
     end
 end
 
 function MSortManager:WriteDebugCall(procedureName, ...)
     if procedureName and self.debugEnabled then
-        self:WriteDebugArguments(string.format("Call |cffff00%s|cffffff", procedureName), ...)
+        self:WriteDebugArguments(string_format("Call |cffff00%s|cffffff", procedureName), ...)
     end
 end
 
 function MSortManager:WriteDebugReturn(procedureName, ...)
     if procedureName and self.debugEnabled then
-        self:WriteDebugArguments(string.format("Return |cffff00%s|cffffff: ", procedureName), ...)
+        self:WriteDebugArguments(string_format("Return |cffff00%s|cffffff: ", procedureName), ...)
     end
 end
 
@@ -203,9 +236,9 @@ function MSortManager:InitializeStaticData()
         elseif FURNITURE_THEME_TYPE_GENERIC == themeId then
             sortWeight = 100
         end
-        table.insert(self.FurnitureThemeList, { id = themeId, name = themeName, sortWeight = sortWeight })
+        table_insert(self.FurnitureThemeList, { id = themeId, name = themeName, sortWeight = sortWeight })
     end
-    table.sort(self.FurnitureThemeList, function (a, b) return a.sortWeight < b.sortWeight or (a.sortWeight == b.sortWeight and a.name < b.name) end)
+    table_sort(self.FurnitureThemeList, function (a, b) return a.sortWeight < b.sortWeight or (a.sortWeight == b.sortWeight and a.name < b.name) end)
 end
 
 function MSortManager:GetDataManager()
@@ -243,10 +276,15 @@ function MSortManager:LogAction(action)
     if not self.actionLog then
         self.actionLog = {}
     end
-    table.insert(self.actionLog, 1, action)
+    -- Optimize: use direct indexing instead of table.insert at position 1
+    local actionLogCount = #self.actionLog
+    for i = actionLogCount, 1, -1 do
+        self.actionLog[i + 1] = self.actionLog[i]
+    end
+    self.actionLog[1] = action
     local iterations = 0
     while #self.actionLog > self.MaxActionLogLines and iterations < 100 do
-        table.remove(self.actionLog, self.MaxActionLogLines + 1)
+        table_remove(self.actionLog, self.MaxActionLogLines + 1)
         iterations = iterations + 1
     end
     MagicSorter_StorageProgressDetail:RefreshActionLog()
@@ -262,13 +300,13 @@ end
 function MSortManager:DumpActionLog()
     d("Magic Sorter Action Log")
     d("_______________________")
-    d(table.concat(self:GetActionLog(), "\n"))
+    d(table_concat(self:GetActionLog(), "\n"))
 end
 
 function MSortManager:GetPlacementLocation()
     local x, y, z, heading = GetPlayerWorldPositionInHouse()
-    x, y, z = math.ceil(x / 10) * 10, math.ceil(y / 2) * 2, math.ceil(z / 10) * 10
-    heading = math.rad(math.ceil(math.deg(heading) / 2) * 2)
+    x, y, z = math_ceil(x / 10) * 10, math_ceil(y / 2) * 2, math_ceil(z / 10) * 10
+    heading = math_rad(math_ceil(math_deg(heading) / 2) * 2)
     return self.placementX or x, self.placementY or y, self.placementZ or z, self.placementHeading or heading
 end
 
@@ -284,7 +322,7 @@ end
 function MSortManager:GetEventTypeString(eventType, event, ...)
     local types = self.EventTypes[eventType]
     if types then
-        return string.format(types[event] or "", ...)
+        return string_format(types[event] or "", ...)
     else
         return ""
     end
@@ -328,7 +366,7 @@ function MSortManager:OnStateChanged(eventType, event, ...)
     end
     local eventMessage = self:GetEventTypeString(eventType, event, ...)
     if not suppressLogAction then
-        local msg = (string.gsub(eventMessage, "\n", "  "))
+        local msg = (string_gsub(eventMessage, "\n", "  "))
         self:LogAction(msg)
     end
     self.lastEvent = { eventType = eventType, event = event, eventMessage = eventMessage }
@@ -431,7 +469,8 @@ function MSortManager:Complete()
                 local themeFiltered = false
                 local eligibleHouses = self:GetHousesByFurnitureCategoryAndTheme(subcategoryId)
                 if eligibleHouses then
-                    for _, houseId in ipairs(eligibleHouses) do
+                    for i = 1, #eligibleHouses do
+                        local houseId = eligibleHouses[i]
                         if self:DoesHouseHaveCapacity(houseId, limitId, 1) then
                             themeFiltered = true
                             break
@@ -440,9 +479,9 @@ function MSortManager:Complete()
                 end
                 local categoryKey
                 if themeFiltered then
-                    categoryKey = string.format("%d_%d_%d", categoryId, subcategoryId, themeId)
+                    categoryKey = string_format("%d_%d_%d", categoryId, subcategoryId, themeId)
                 else
-                    categoryKey = string.format("%d_%d", categoryId, subcategoryId)
+                    categoryKey = string_format("%d_%d", categoryId, subcategoryId)
                 end
                 if not categoryCapacityDeficits[categoryKey] then
                     categoryCapacityDeficits[categoryKey] = { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeFiltered and themeId or nil, slotDeficit = 0 }
@@ -452,7 +491,9 @@ function MSortManager:Complete()
         end
     end
 
-    for _, house in ipairs(self.houseList) do
+    local houseListCount = #self.houseList
+    for i = 1, houseListCount do
+        local house = self.houseList[i]
         local removables = self:GetHouseRemovables(house.houseId)
         local removableCount = 0
         if removables then
@@ -465,9 +506,9 @@ function MSortManager:Complete()
                 if subcategoryId then
                     local categoryKey
                     if themeFiltered then
-                        categoryKey = string.format("%d_%d_%d", categoryId, subcategoryId, themeId)
+                        categoryKey = string_format("%d_%d_%d", categoryId, subcategoryId, themeId)
                     else
-                        categoryKey = string.format("%d_%d", categoryId, subcategoryId)
+                        categoryKey = string_format("%d_%d", categoryId, subcategoryId)
                     end
                     local stackSize = 1
                     if not categoryCapacityDeficits[categoryKey] then
@@ -479,47 +520,58 @@ function MSortManager:Complete()
         end
     end
 
-    table.insert(report, "MAGIC SORTER REPORT")
+    -- Optimize: use direct indexing instead of table.insert
+    local reportCount = 0
+    local function addReport(line)
+        reportCount = reportCount + 1
+        report[reportCount] = line
+    end
+    
+    addReport("MAGIC SORTER REPORT")
     if NonContiguousCount(categoryCapacityDeficits) == 0 then
-        table.insert(report, "Storage home capacity was sufficient for all furnishings.")
+        addReport("Storage home capacity was sufficient for all furnishings.")
     else
-        table.insert(report, "|cffffaaInsufficient storage capacity|cffffff for these categories / styles:")
+        addReport("|cffffaaInsufficient storage capacity|cffffff for these categories / styles:")
 
         local deficitReport = {}
+        local deficitReportCount = 0
         for categoryKey, categoryDeficit in pairs(categoryCapacityDeficits) do
             categoryDeficit.categoryName = self:GetFurnitureCategoryName(categoryDeficit.categoryId, categoryDeficit.subcategoryId) or ""
             if categoryDeficit.themeId then
                 local themeName = self.FurnitureThemes[categoryDeficit.themeId]
                 if themeName then
-                    categoryDeficit.categoryName = string.format("%s (%s)", categoryDeficit.categoryName, themeName)
+                    categoryDeficit.categoryName = string_format("%s (%s)", categoryDeficit.categoryName, themeName)
                 end
             end
             local parentName = self:GetFurnitureCategoryName(categoryDeficit.categoryId)
             if parentName and parentName ~= "" then
                 categoryDeficit.parentCategoryName = parentName
             end
-            table.insert(deficitReport, categoryDeficit)
+            deficitReportCount = deficitReportCount + 1
+            deficitReport[deficitReportCount] = categoryDeficit
         end
-        table.sort(deficitReport, function (categoryA, categoryB) return categoryA.categoryName < categoryB.categoryName end)
+        table_sort(deficitReport, function (categoryA, categoryB) return categoryA.categoryName < categoryB.categoryName end)
 
         local previousParentCategoryName, previousParentCategoryCount = "", 0
         local parentCategoryFormat = "  |cffff33%d item%s|c33ffff, %s"
 
-        for _, deficit in ipairs(deficitReport) do
+        local deficitReportCountFinal = #deficitReport
+        for i = 1, deficitReportCountFinal do
+            local deficit = deficitReport[i]
             if previousParentCategoryName ~= deficit.parentCategoryName then
                 if previousParentCategoryName ~= "" then
-                    table.insert(report, string.format(parentCategoryFormat, previousParentCategoryCount, previousParentCategoryCount == 1 and "" or "s", previousParentCategoryName))
+                    addReport(string_format(parentCategoryFormat, previousParentCategoryCount, previousParentCategoryCount == 1 and "" or "s", previousParentCategoryName))
                 end
                 previousParentCategoryName = deficit.parentCategoryName
                 previousParentCategoryCount = 0
             end
             local slotDeficit = deficit.slotDeficit or 0
             previousParentCategoryCount = previousParentCategoryCount + slotDeficit
-            table.insert(report, string.format("|cffffaa%d item%s|cffffff, %s", slotDeficit, slotDeficit == 1 and "" or "s", deficit.categoryName))
+            addReport(string_format("|cffffaa%d item%s|cffffff, %s", slotDeficit, slotDeficit == 1 and "" or "s", deficit.categoryName))
         end
 
         if previousParentCategoryCount ~= 0 then
-            table.insert(report, string.format(parentCategoryFormat, previousParentCategoryCount, previousParentCategoryCount == 1 and "" or "s", previousParentCategoryName))
+            addReport(string_format(parentCategoryFormat, previousParentCategoryCount, previousParentCategoryCount == 1 and "" or "s", previousParentCategoryName))
         end
     end
 
@@ -542,8 +594,17 @@ function MSortManager:GetAndValidateConfiguration()
 
     local houseList = {}
     self.houseList = houseList
+    -- Optimize: count first, then use direct indexing
+    local houseCount = 0
     for houseId, house in pairs(self.houses) do
-        table.insert(houseList, house)
+        houseCount = houseCount + 1
+    end
+    -- Pre-size table
+    for i = 1, houseCount do houseList[i] = true end
+    houseCount = 0
+    for houseId, house in pairs(self.houses) do
+        houseCount = houseCount + 1
+        houseList[houseCount] = house
     end
 
     local categories = {}
@@ -609,7 +670,7 @@ function MSortManager:GetFurnitureCategoryName(categoryId, subcategoryId)
     local categoryName = GetFurnitureCategoryName(categoryId) or ""
     local subcategoryName = GetFurnitureCategoryName(subcategoryId) or ""
     if subcategoryName ~= "" then
-        return string.format("%s, %s", categoryName, subcategoryName)
+        return string_format("%s, %s", categoryName, subcategoryName)
     else
         return categoryName
     end
@@ -652,7 +713,8 @@ function MSortManager:GetHousesByFurnitureCategoryAndTheme(subcategoryId, themeI
             local house = self.houses[houseId]
             if house then
                 if not house.assignedThemeIds or NonContiguousCount(house.assignedThemeIds) == 0 or house.assignedThemeIds[themeId] then
-                    table.insert(houses, houseId)
+                    local housesCount = #houses + 1
+                    houses[housesCount] = houseId
                 end
             end
         end
@@ -684,12 +746,13 @@ function MSortManager:GetStoredFurniture()
             local categoryId, subcategoryId, themeId = self:GetFurnitureCategoryByFurnitureId(furnitureId)
             if self:IsStoredFurniture(houseId, categoryId, subcategoryId, themeId) then
                 local itemName = GetPlacedHousingFurnitureInfo(furnitureId) or ""
-                table.insert(items, { furnitureId = furnitureId, name = itemName })
+                local itemsCount = #items + 1
+                items[itemsCount] = { furnitureId = furnitureId, name = itemName }
             end
             furnitureId = GetNextPlacedHousingFurnitureId(furnitureId)
         end
     end
-    table.sort(items, function (itemA, itemB) return itemA.name < itemB.name end)
+    table_sort(items, function (itemA, itemB) return itemA.name < itemB.name end)
     return items
 end
 
@@ -795,16 +858,19 @@ do
         -- Optimize removables with a descending stack size sort where stack size is grouped by item id and bound state.
         if list then
             local stackSizes = {}
-            for _, item in ipairs(list) do
+            local listCount = #list
+            for i = 1, listCount do
+                local item = list[i]
                 local stackDescriptor = item.itemId * (item.bound and 1 or -1)
                 local stackSize = stackSizes[stackDescriptor]
                 stackSizes[stackDescriptor] = (stackSize or 0) + 1
                 item.stackDescriptor = stackDescriptor
             end
-            for _, item in ipairs(list) do
+            for i = 1, listCount do
+                local item = list[i]
                 item.stackSize = stackSizes[item.stackDescriptor] or 1
             end
-            table.sort(list, RemovableComparer)
+            table_sort(list, RemovableComparer)
         end
         self.houseRemovables[houseId] = list
     end
@@ -821,7 +887,8 @@ function MSortManager:GetRemovableFurnitureList()
                 local itemLink = GetPlacedFurnitureLink(furnitureId)
                 local itemId = GetItemLinkItemId(itemLink) or 0
                 local bound = IsItemLinkBound(itemLink)
-                table.insert(list, { furnitureId = furnitureId, categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, itemId = itemId, bound = bound, limitType = limitId })
+                local listCount = #list + 1
+                list[listCount] = { furnitureId = furnitureId, categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, itemId = itemId, bound = bound, limitType = limitId }
             end
         end
         furnitureId = GetNextPlacedHousingFurnitureId(furnitureId)
@@ -848,13 +915,14 @@ function MSortManager:PreCalculateHouseRemovables(currentHouseIndex)
             local inventory = inventoryManager:GetHouseInventory(houseId)
 
             for itemId, count in pairs(inventory) do
-                itemId = math.abs(itemId)
+                itemId = math_abs(itemId)
                 local link, categoryId, subcategoryId, themeId, limitId = inventoryManager:GetFurnitureItemIdInfo(itemId)
                 if categoryId and categoryId ~= 0 then
                     if not self:IsFurniturePlaceableInHouse(houseId, categoryId, subcategoryId, themeId) and self:IsFurniturePlaceableInAnyHouse(houseId, categoryId, subcategoryId, themeId) then
                         for itemIndex = 1, count do
                             local bound = IsItemLinkBound(link)
-                            table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, itemId = itemId, bound = bound, limitType = limitId })
+                            local listCount = #list + 1
+                            list[listCount] = { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, itemId = itemId, bound = bound, limitType = limitId }
                         end
                     end
                 end
@@ -888,18 +956,21 @@ function MSortManager:GetOutboundFurnitureList(houseId)
         local limitType = item.limitType
         local stackSize = item.stackSize or 1
         local targetHouses = self:GetHousesByFurnitureCategoryAndTheme(subcategoryId, themeId)
-        for _, targetHouseId in ipairs(targetHouses) do
-            local targetHouse = self.houses[targetHouseId]
+        local targetHousesCount = #targetHouses
+        for i = 1, targetHousesCount do
+            local targetHouseId = targetHouses[i]
+            local targetHouse = self.houses[targetHouseId]  -- Buffer
             if targetHouse and self:HasVisitedHouse(targetHouseId) then
-                local bucket = targetBuckets[targetHouseId]
+                local bucket = targetBuckets[targetHouseId]  -- Buffer
                 if not bucket then
                     bucket = {}
                     targetBuckets[targetHouseId] = bucket
                 end
-                local used = (bucket[limitType] or 0)
+                local used = bucket[limitType] or 0  -- Buffer
                 for targetCount = 1, stackSize do
                     if self:DoesHouseHaveCapacity(targetHouseId, limitType, used + 1) then
-                        table.insert(outbound, item)
+                        local outboundCount = #outbound + 1
+                        outbound[outboundCount] = item
                         used = used + 1
                     else
                         break
@@ -956,12 +1027,13 @@ do
                     end
                     
                     if shouldAdd then
-                        table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = bagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType })
+                        local listCount = #list + 1
+                        list[listCount] = { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = bagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType }
                     end
                 end
             end
         end
-        table.sort(list, PlaceableComparer)
+        table_sort(list, PlaceableComparer)
         return list
     end
 end
@@ -972,7 +1044,9 @@ function MSortManager:GetPlaceableFurnitureCountForHouse(houseId, filterLimitTyp
     local capacity2 = self:GetHouseCapacity(houseId, HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or 0
     local placeables = self:GetPlaceableFurnitureListForHouse(houseId, filterLimitType)
     if placeables then
-        for index, item in ipairs(placeables) do
+        local placeablesCount = #placeables
+        for index = 1, placeablesCount do
+            local item = placeables[index]
             if item.limitType == HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM then
                 count1 = count1 + (item.stackSize or 1)
             elseif item.limitType == HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM then
@@ -980,8 +1054,8 @@ function MSortManager:GetPlaceableFurnitureCountForHouse(houseId, filterLimitTyp
             end
         end
         if not includeUnknown then
-            count1 = math.min(count1, capacity1 or 0)
-            count2 = math.min(count2, capacity2 or 0)
+            if count1 > (capacity1 or 0) then count1 = capacity1 or 0 end
+            if count2 > (capacity2 or 0) then count2 = capacity2 or 0 end
         end
     end
     return count1 + count2
@@ -990,7 +1064,8 @@ end
 function MSortManager:GetNextHouse()
     self:WriteDebug("Current House (%d)", self:GetHouseId() or 0)
     self:WriteDebugCall("GetNextHouse")
-    local freeSlots = math.max(0, GetNumBagFreeSlots(self.InventoryBag) - 1)
+    local freeSlots = GetNumBagFreeSlots(self.InventoryBag) - 1
+    if freeSlots < 0 then freeSlots = 0 end
     local currentHouse = self:GetCurrentHouse()
     local visitedPlaceables, visitedPlaceableHouse = 0, nil
     local visitedRemovables, visitedRemovableHouse = 0, nil
@@ -998,7 +1073,9 @@ function MSortManager:GetNextHouse()
     local unvisited = 0
     local houses = {}
     self:GetRemovableFurnitureList()
-    for _, house in ipairs(self.houseList) do
+    local houseListCount = #self.houseList
+    for i = 1, houseListCount do
+        local house = self.houseList[i]
         if not self:HasVisitedHouse(house.houseId) then
             unvisited = unvisited + 1
             local placeableCount = self:GetPlaceableFurnitureCountForHouse(house.houseId, nil, true) or 0
@@ -1015,7 +1092,8 @@ function MSortManager:GetNextHouse()
             local removableCount = 0
             local removableList = self:GetOutboundFurnitureList(house.houseId)
             if removableList then
-                removableCount = math.min(freeSlots, #removableList)
+                removableCount = #removableList
+                if removableCount > freeSlots then removableCount = freeSlots end
             end
             if removableCount > visitedRemovables then
                 visitedRemovableHouse = house
@@ -1045,20 +1123,20 @@ function MSortManager:OnOrganizeFurniture()
     if not self:CheckState() then
         return
     end
-    local PI, PI2, EPSILON = math.pi, 2 * math.pi, math.rad(10)
+    local PI, PI2, EPSILON = math_pi, 2 * math_pi, math_rad(10)
     local items, index = self.organizeItems, self.organizeItemIndex
     while items and index and index <= #items do
-        self:OnStateChanged("ORGANIZE", "ORGANIZE_PERCENT", math.floor(100 * (index / #items)))
+        self:OnStateChanged("ORGANIZE", "ORGANIZE_PERCENT", math_floor(100 * (index / #items)))
         local item = items[index]
         if item then
             index = index + 1
             self.organizeItemIndex = index
             local x, y, z = HousingEditorGetFurnitureWorldPosition(item.furnitureId)
             local pitch, yaw, roll = HousingEditorGetFurnitureOrientation(item.furnitureId)
-            local yawp = math.abs(yaw - item.yaw)
+            local yawp = math_abs(yaw - item.yaw)
             if yawp > PI then yawp = PI2 - yawp end
-            local yawc = yawp > EPSILON and (math.abs(PI2 - (yawp + PI)) % PI2) > EPSILON
-            if math.abs(x - item.x) > 5 or math.abs(y - item.y) > 5 or math.abs(z - item.z) > 5 or yawc then
+            local yawc = yawp > EPSILON and (math_abs(PI2 - (yawp + PI)) % PI2) > EPSILON
+            if math_abs(x - item.x) > 5 or math_abs(y - item.y) > 5 or math_abs(z - item.z) > 5 or yawc then
                 HousingEditorRequestChangePositionAndOrientation(item.furnitureId, item.x, item.y, item.z, item.pitch, item.yaw, item.roll)
                 return
             end
@@ -1093,11 +1171,13 @@ function MSortManager:OrganizeFurniture()
         zo_callLater(function () myself:OrganizeHouse(true) end, 100)
         return
     end
-    table.sort(items, function (itemA, itemB)
+    table_sort(items, function (itemA, itemB)
         return itemA.name < itemB.name
     end)
     local previousName, groupIndex = nil, 0
-    for index, item in ipairs(items) do
+    local itemsCount = #items
+    for index = 1, itemsCount do
+        local item = items[index]
         if item.name ~= previousName then
             groupIndex = groupIndex + 1
         end
@@ -1111,15 +1191,15 @@ function MSortManager:OrganizeFurniture()
         local ox, oy, oz = item.offsetX, item.offsetY, item.offsetZ
         local sx, sy, sz = item.sizeX, item.sizeY, item.sizeZ
         if item.sizeX <= item.sizeZ then
-            item.offsetX, item.offsetZ = Rotate2D(ox, oz, 0.5 * math.pi)
+            item.offsetX, item.offsetZ = Rotate2D(ox, oz, 0.5 * math_pi)
             item.sizeX, item.sizeZ = sz, sx
-            item.yawOffset = 0.5 * math.pi
+            item.yawOffset = 0.5 * math_pi
         end
         item.areaScore = 0.5 * (item.sizeX + item.sizeZ)
         previousName = item.name
     end
     local numGroups = groupIndex
-    table.sort(items, function (itemA, itemB)
+    table_sort(items, function (itemA, itemB)
         return
             itemA.areaScore < itemB.areaScore or
             (itemA.areaScore == itemB.areaScore and itemA.groupIndex < itemB.groupIndex) or
@@ -1131,12 +1211,12 @@ function MSortManager:OrganizeFurniture()
     local iterationsY, maxY = 0, 0
     groupIndex = nil
     local function AdvancePosition(item)
-        if not currentX or (math.abs(minOffsetX) > maxExtentX and maxOffsetX > maxExtentX) then
+        if not currentX or (math_abs(minOffsetX) > maxExtentX and maxOffsetX > maxExtentX) then
             if currentX then
                 extentIncrement = extentIncrement * 1.25
                 currentY = currentY + elevationIncrement
                 maxExtentX = maxExtentX + extentIncrement
-                if math.abs(currentZ) > maxExtentZ then
+                if math_abs(currentZ) > maxExtentZ then
                     iterationsY = iterationsY + 1
                     extentIncrement = initialExtentIncrement
                     maxExtentZ = maxExtentZ * 1.5
@@ -1148,15 +1228,18 @@ function MSortManager:OrganizeFurniture()
                 end
             end
             currentX, minOffsetX, maxOffsetX, minOffsetZ = 0, -0.5 * item.sizeX, 0.5 * item.sizeX, maxOffsetZ
-        elseif math.abs(minOffsetX) <= maxOffsetX then
+        elseif math_abs(minOffsetX) <= maxOffsetX then
             currentX, minOffsetX = minOffsetX - 0.5 * item.sizeX - 1, minOffsetX - item.sizeX - 2
         else
             currentX, maxOffsetX = maxOffsetX + 0.5 * item.sizeX + 1, maxOffsetX + item.sizeX + 2
         end
-        maxOffsetZ = math.max(maxOffsetZ, minOffsetZ + item.sizeZ)
+        local newMax = minOffsetZ + item.sizeZ
+        if newMax > maxOffsetZ then maxOffsetZ = newMax end
         currentZ = minOffsetZ + 0.5 * item.sizeZ
     end
-    for index, item in ipairs(items) do
+    local itemsCountFinal = #items
+    for index = 1, itemsCountFinal do
+        local item = items[index]
         if not groupIndex then
             groupIndex = item.groupIndex
             groupOffset = 1
@@ -1169,11 +1252,12 @@ function MSortManager:OrganizeFurniture()
             groupOffset = groupOffset + 1
         end
         local itemOffsetX, itemOffsetZ = Rotate2D(currentX + item.offsetX, -currentZ + item.offsetZ, yaw)
-        item.x = math.ceil(x + itemOffsetX)
-        item.y = math.ceil(y + item.offsetY + 0.5 * item.sizeY + currentY)
-        item.z = math.ceil(z + itemOffsetZ)
+        item.x = math_ceil(x + itemOffsetX)
+        item.y = math_ceil(y + item.offsetY + 0.5 * item.sizeY + currentY)
+        item.z = math_ceil(z + itemOffsetZ)
         item.yaw = yaw + (item.yawOffset or 0)
-        maxY = math.max(maxY, currentY + item.sizeY + 20)
+        local newY = currentY + item.sizeY + 20
+        if newY > maxY then maxY = newY end
     end
     self.organizeItems = items
     self.organizeItemIndex = 1
@@ -1250,7 +1334,9 @@ function MSortManager:SwapAnyItem()
     local placeList = self:GetPlaceableFurnitureList()
     local capacity1 = self:GetHouseCapacity(houseId, HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM) or 0
     local capacity2 = self:GetHouseCapacity(houseId, HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or 0
-    for _, item in ipairs(placeList) do
+    local placeListCount = #placeList
+    for i = 1, placeListCount do
+        local item = placeList[i]
         if (item.limitType == HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM and capacity1 > 0) or
         (item.limitType == HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM and capacity2 > 0) then
             if self:PlaceFurniture(item.bagId, item.slotIndex) then
@@ -1364,7 +1450,7 @@ function MSortManager:RemoveFurniture(furnitureId)
     local categoryName = self:GetFurnitureCategoryName(self:GetFurnitureCategoryByFurnitureId(furnitureId))
     local furnitureName, _, furnitureDataId = GetPlacedHousingFurnitureInfo(furnitureId)
     local _, _, _, limitType = GetFurnitureDataInfo(furnitureDataId)
-    local itemName = string.format("%s\n(%s)", GetItemLinkName(GetPlacedFurnitureLink(furnitureId)) or "item", categoryName or "Unknown Category")
+    local itemName = string_format("%s\n(%s)", GetItemLinkName(GetPlacedFurnitureLink(furnitureId)) or "item", categoryName or "Unknown Category")
     -- The intent to remove an item is sufficient to clear the associated limit type's At Capacity flag.
     local result = HousingEditorRequestRemoveFurniture(furnitureId)
     if result == HOUSING_REQUEST_RESULT_SUCCESS then
@@ -1383,7 +1469,7 @@ function MSortManager:PlaceFurniture(bagId, slotIndex)
         return false
     end
     local categoryName = self:GetFurnitureCategoryName(self:GetFurnitureCategoryByBagAndSlot(bagId, slotIndex))
-    local itemName = string.format("%s\n(%s)", GetItemName(bagId, slotIndex) or "item", categoryName or "Unknown Category")
+    local itemName = string_format("%s\n(%s)", GetItemName(bagId, slotIndex) or "item", categoryName or "Unknown Category")
     local x, y, z, yaw = self:GetPlacementLocation()
     local offsetX, offsetZ = Rotate2D(0, -800, yaw)
     x, z = x + offsetX, z + offsetZ
