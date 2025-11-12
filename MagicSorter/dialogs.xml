@@ -3178,9 +3178,9 @@
     <TopLevelControl name="MagicSorter_StorageProgressDetail"
                      clampedToScreen="false"
                      hidden="true"
-                     mouseEnabled="false"
-                     movable="false"
-                     resizeHandleSize="0"
+                     mouseEnabled="true"
+                     movable="true"
+                     resizeHandleSize="10"
                      tier="NORMAL"
                      layer="CONTROLS"
                      level="1">
@@ -3323,8 +3323,7 @@
       <Controls>
         <Control name="$(parent)DetailScrollContainer">
           <Anchor point="TOPLEFT" />
-          <Dimensions x="540"
-                      y="220" />
+          <Anchor point="BOTTOMRIGHT" />
           <Controls>
             <Texture name="$(parent)DetailScrollBackdrop"
                      color="333333"
@@ -3413,8 +3412,7 @@
                  layer="CONTROLS"
                  level="1">
           <Anchor point="TOPLEFT" />
-          <Dimensions x="540"
-                      y="220" />
+          <Anchor point="BOTTOMRIGHT" />
           <Controls>
             <Texture name="$(parent)LogScrollBackdrop"
                      color="333333"
@@ -3451,7 +3449,7 @@
               <Anchor point="BOTTOMRIGHT"
                       relativeTo="$(parent)"
                       relativePoint="BOTTOMRIGHT"
-                      offsetX="0"
+                      offsetX="-20"
                       offsetY="0" />
               <Controls>
                 <Control name="$(parent)LogScrollContents"
