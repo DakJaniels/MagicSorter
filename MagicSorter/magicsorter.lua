@@ -1,15 +1,6 @@
 ---@class MSorter : ZO_InitializingObject
 local MSorter = ZO_InitializingObject:Subclass()
 
--- Localize standard Lua API functions for performance
-local math_cos = math.cos
-local math_sin = math.sin
-local math_max = math.max
-local string_format = string.format
-local table_insert = table.insert
-local table_sort = table.sort
-local table_concat = table.concat
-
 EVENT_MANAGER:RegisterForEvent("MagicSorter", EVENT_ADD_ON_LOADED, function (event, addOnName)
     if addOnName == "MagicSorter" then
         EVENT_MANAGER:UnregisterForEvent("MagicSorter", EVENT_ADD_ON_LOADED)
@@ -37,7 +28,7 @@ function MSorter:Initialize()
 end
 
 function MSorter:InitializeStaticData()
-    self.AddonVersion = 24
+    self.AddonVersion = 23
     self.AddonName = "MagicSorter"
     self.AddonDev = "Architectura"
     self.EventDescriptor = "magicsorter"
@@ -169,7 +160,7 @@ end
 
 function MSorter:RotateTexture(texture, angle, centerX, centerY, scaleX, scaleY)
     angle, centerX, centerY, scaleX, scaleY = angle or 0, centerX or 0.5, centerY or 0.5, scaleX or 1, scaleY or 1
-    local cosine, sine = math_cos(angle), math_sin(angle)
+    local cosine, sine = math.cos(angle), math.sin(angle)
     local x1, y1 = -0.5 * sine + -0.5 * cosine, -0.5 * cosine - -0.5 * sine
     local x2, y2 = -0.5 * sine + 0.5 * cosine, -0.5 * cosine - 0.5 * sine
     local x3, y3 = 0.5 * sine + -0.5 * cosine, 0.5 * cosine - -0.5 * sine
@@ -206,7 +197,7 @@ function MSorter:InitializeDialogs()
     self.dialogs["StorageProgress"] = { control = MagicSorter_StorageProgress }
     self.dialogs["Complete"] = { control = MagicSorter_Complete }
     self.dialogs["ReportInventory"] = { control = MagicSorter_ReportInventory }
-    local version = string_format("Version %.1f", self:GetVersion())
+    local version = string.format("Version %.1f", self:GetVersion())
     for dialogName, dialog in pairs(self.dialogs) do
         dialog.name = dialogName
         local versionLabel = dialog.control:GetNamedChild("Version")
@@ -226,11 +217,9 @@ end
 
 function MSorter:GetDialogsByVisibility(isHidden)
     local dialogs = {}
-    local dialogsCount = 0
     for dialogName, dialog in pairs(self.dialogs) do
         if dialog.control:IsHidden() == isHidden then
-            dialogsCount = dialogsCount + 1
-            dialogs[dialogsCount] = dialog
+            table.insert(dialogs, dialog)
         end
     end
     return dialogs
@@ -283,26 +272,20 @@ function MSorter:SetupAndDockReportSummaryToDialog(report, control)
     local message = summary.message
     local container = message:GetParent()
     local reportLines = {}
-    local reportLinesCount = 0
-    local reportCount = #report
-    for lineIndex = 1, reportCount do
-        local line = report[lineIndex]
+    for lineIndex, line in ipairs(report) do
         if line == "" then
             break
         end
-        reportLinesCount = reportLinesCount + 1
-        reportLines[reportLinesCount] = line
+        table.insert(reportLines, line)
     end
-    message:SetText(table_concat(reportLines, "\n"))
+    message:SetText(table.concat(reportLines, "\n"))
     summary:ClearAnchors()
     summary:SetAnchor(RIGHT, control, LEFT, -15)
     summary:SetHidden(false)
     zo_callLater(function ()
                      local height = message:GetTextHeight()
                      container:SetHeight(height)
-                     local maxVal = height - panel:GetHeight()
-                     if maxVal < 0 then maxVal = 0 end
-                     slider:SetMinMax(0, maxVal)
+                     slider:SetMinMax(0, math.max(0, height - panel:GetHeight()))
                  end, 400)
 end
 
@@ -479,11 +462,10 @@ function MSorter:GetOwnedHouses()
             local _, _, houseIcon = GetCollectibleInfo(collectibleId)
             local houseImage = GetHousePreviewBackgroundImage(houseId)
             local house = { collectibleId = collectibleId, houseId = houseId, houseName = houseNameCleaned, houseIcon = houseIcon, houseImage = houseImage, assignedCategoryIds = {}, assignedThemeIds = {} }
-            local housesCount = #houses + 1
-            houses[housesCount] = house
+            table.insert(houses, house)
         end
     end
-    table_sort(houses, function (houseA, houseB) return houseA.houseName < houseB.houseName end)
+    table.sort(houses, function (houseA, houseB) return houseA.houseName < houseB.houseName end)
     return houses
 end
 
@@ -530,8 +512,7 @@ end
 function MSorter:OnSubmitStorageHouses(houses)
     local storageHouses = {}
     local numHouses = 0
-    for i = 1, #houses do
-        local house = houses[i]
+    for _, house in ipairs(houses) do
         local storageHouse = self:GetStorageHouse(house.houseId)
         if not storageHouse then
             storageHouse = house
@@ -566,9 +547,9 @@ function MSorter:AddFurnitureCategory(categoryId, parentCategoryId, parentCatego
             local categoryName = GetFurnitureCategoryName(categoryId)
             local displayName
             if parentCategoryId and parentCategoryName then
-                displayName = string_format("%s, %s", parentCategoryName, categoryName)
+                displayName = string.format("%s, %s", parentCategoryName, categoryName)
             else
-                displayName = string_format("%s, All", categoryName)
+                displayName = string.format("%s, All", categoryName)
             end
             local category = { id = categoryId, parentId = parentCategoryId or 0, name = categoryName, displayName = displayName, assignedHouseIds = {} }
             self.furnitureCategories[categoryId] = category
@@ -581,7 +562,7 @@ function MSorter:IsValidFurnitureCategory(categoryId, subcategoryId)
     if not subcategoryId then
         return not self.InvalidParentCategoryIds[categoryId]
     else
-        return not self.InvalidSubcategoryIds[string_format("%d_%d", categoryId, subcategoryId)]
+        return not self.InvalidSubcategoryIds[string.format("%d_%d", categoryId, subcategoryId)]
     end
 end
 
@@ -613,11 +594,9 @@ end
 function MSorter:GetFurnitureSubcategories(categoryId)
     local categories = self:GetFurnitureCategories()
     local subcategories = {}
-    local subcategoriesCount = 0
     for _, category in pairs(categories) do
         if category.parentId == categoryId then
-            subcategoriesCount = subcategoriesCount + 1
-            subcategories[subcategoriesCount] = category
+            table.insert(subcategories, category)
         end
     end
     return subcategories
@@ -630,12 +609,10 @@ end
 
 function MSorter:GetCategoryHouseAssignments(categoryId)
     local assignedHouses = {}
-    local assignedHousesCount = 0
     local houses = self:GetStorageHouses()
     for _, house in pairs(houses) do
         if house.assignedCategoryIds and house.assignedCategoryIds[categoryId] then
-            assignedHousesCount = assignedHousesCount + 1
-            assignedHouses[assignedHousesCount] = house
+            table.insert(assignedHouses, house)
         end
     end
     return assignedHouses
@@ -654,8 +631,7 @@ function MSorter:GetHouseCategoryAssignments(houseId)
         for categoryId in pairs(house.assignedCategoryIds) do
             local category = categories[categoryId]
             if category then
-                local assignedCategoriesCount = #assignedCategories + 1
-                assignedCategories[assignedCategoriesCount] = category
+                table.insert(assignedCategories, category)
             end
         end
     end
@@ -669,19 +645,16 @@ function MSorter:GetHouseCategoryAssigmentsString(houseId)
         local categoryIds = {}
         local categories = {}
         ZO_DeepTableCopy(houseCategories, categories)
-        table_sort(categories, function (categoryA, categoryB) return categoryA.parentId < categoryB.parentId end)
-        local categoriesCount = #categories
-        for i = 1, categoriesCount do
-            local category = categories[i]
+        table.sort(categories, function (categoryA, categoryB) return categoryA.parentId < categoryB.parentId end)
+        for _, category in ipairs(categories) do
             categoryIds[category.id] = true
             if category.parentId == 0 or not categoryIds[category.parentId] then
-                local listCount = #list + 1
-                list[listCount] = category.displayName
+                table.insert(list, category.displayName)
             end
         end
-        table_sort(list)
+        table.sort(list)
     end
-    return table_concat(list, "\n")
+    return table.concat(list, "\n")
 end
 
 function MSorter:AssignCategoryToHouse(houseId, category)
