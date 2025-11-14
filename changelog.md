@@ -1,5 +1,9 @@
 # Changelog
 
+## [25] - 2025-11-14
+- Fixed an issue where items weren't being moved from houses with no categories assigned to houses with parent categories assigned (e.g., "Conservatory, All"). The system now correctly checks both subcategory and parent category assignments when determining where items can be placed.
+- Removed the requirement that target houses must be visited before items can be moved to them, allowing items to be moved to any house with appropriate category assignments regardless of visit order.
+
 ## [23] - 2025-06-02
 - API update.
 - Bug Fixes.
