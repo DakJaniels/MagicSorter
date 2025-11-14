@@ -1,19 +1,10 @@
 ---@class MSorter : ZO_InitializingObject
 local MSorter = ZO_InitializingObject:Subclass()
 
-EVENT_MANAGER:RegisterForEvent("MagicSorter", EVENT_ADD_ON_LOADED, function (event, addOnName)
-    if addOnName == "MagicSorter" then
-        EVENT_MANAGER:UnregisterForEvent("MagicSorter", EVENT_ADD_ON_LOADED)
-        MAGIC_SORTER = MSorter:New()
-    end
+EVENT_MANAGER:RegisterForEvent("MagicSorter", EVENT_ADD_ONS_LOADED, function (event)
+    EVENT_MANAGER:UnregisterForEvent("MagicSorter", EVENT_ADD_ONS_LOADED)
+    MAGIC_SORTER = MSorter:New()
 end)
-
-function MSorter:New()
-    local object = setmetatable({}, self)
-    ---@cast object MSorter
-    object:Initialize()
-    return object
-end
 
 function MSorter:Initialize()
     if not self.initialized then
@@ -28,11 +19,22 @@ function MSorter:Initialize()
 end
 
 function MSorter:InitializeStaticData()
-    self.AddonVersion = 23
+    self.AddonVersion = 25
     self.AddonName = "MagicSorter"
     self.AddonDev = "Architectura"
     self.EventDescriptor = "magicsorter"
-    self.KeybindButtons = { alignment = KEYBIND_STRIP_ALIGN_CENTER, { name = "Magic Sorter", keybind = "UI_SHORTCUT_REPORT_PLAYER", callback = function () MAGIC_SORTER:StartStorageWizard() end, visible = function () return true end, }, }
+    self.KeybindButtons =
+    {
+        alignment = KEYBIND_STRIP_ALIGN_CENTER,
+        {
+            name = "Magic Sorter",
+            keybind = "UI_SHORTCUT_REPORT_PLAYER",
+            callback = GenerateFlatClosure(self.StartStorageWizard, self),
+            visible = function ()
+                return true
+            end,
+        },
+    }
     self.KeybindId = "MAGIC_SORTER"
     self.MaxHouseId = 300
     self.MaxKeybind = 4
@@ -91,7 +93,7 @@ end
 function MSorter:InitializeEventHandlers()
     if not self.initializedEventHandlers then
         self.initializedEventHandlers = true
-        EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_PLAYER_ACTIVATED, function (...) self:OnPlayerActivated(...) end)
+        EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_PLAYER_ACTIVATED, GenerateClosure(self.OnPlayerActivated, self))
         local function OnSceneStateChange(oldState, newState)
             if newState == "shown" then
                 self:UpdateKeybindStrip(true)
@@ -132,7 +134,9 @@ end
 function MSorter:InitializeKeybinds()
     if not self.initializedKeybinds then
         self.initializedKeybinds = true
-        KEYBINDING_MANAGER.IsChordingAlwaysEnabled = function () return true end
+        KEYBINDING_MANAGER.IsChordingAlwaysEnabled = function ()
+            return true
+        end
         ZO_CreateStringId("SI_BINDING_NAME_" .. self.KeybindId, "Magic Sorter")
         self:CreateKeybind(self.KeybindId, KEY_F10, 0, 0, 0, 0)
     end
@@ -190,13 +194,13 @@ end
 
 function MSorter:InitializeDialogs()
     self.dialogs = {}
-    self.dialogs["HouseSelection"] = { control = MagicSorter_HouseSelection }
-    self.dialogs["CategoryAssignment"] = { control = MagicSorter_CategoryAssignment }
-    self.dialogs["ThemeAssignment"] = { control = MagicSorter_ThemeAssignment }
-    self.dialogs["Disclaimer"] = { control = MagicSorter_Disclaimer }
-    self.dialogs["StorageProgress"] = { control = MagicSorter_StorageProgress }
-    self.dialogs["Complete"] = { control = MagicSorter_Complete }
-    self.dialogs["ReportInventory"] = { control = MagicSorter_ReportInventory }
+    self.dialogs["HouseSelection"] = { control = GetControl("MagicSorter_HouseSelection") }
+    self.dialogs["CategoryAssignment"] = { control = GetControl("MagicSorter_CategoryAssignment") }
+    self.dialogs["ThemeAssignment"] = { control = GetControl("MagicSorter_ThemeAssignment") }
+    self.dialogs["Disclaimer"] = { control = GetControl("MagicSorter_Disclaimer") }
+    self.dialogs["StorageProgress"] = { control = GetControl("MagicSorter_StorageProgress") }
+    self.dialogs["Complete"] = { control = GetControl("MagicSorter_Complete") }
+    self.dialogs["ReportInventory"] = { control = GetControl("MagicSorter_ReportInventory") }
     local version = string.format("Version %.1f", self:GetVersion())
     for dialogName, dialog in pairs(self.dialogs) do
         dialog.name = dialogName
@@ -266,7 +270,7 @@ function MSorter:SetAllDialogsHidden()
 end
 
 function MSorter:SetupAndDockReportSummaryToDialog(report, control)
-    local summary = MagicSorter_ReportSummary
+    local summary = GetControl("MagicSorter_ReportSummary")
     local panel = summary.panel
     local slider = summary.slider
     local message = summary.message
@@ -282,15 +286,17 @@ function MSorter:SetupAndDockReportSummaryToDialog(report, control)
     summary:ClearAnchors()
     summary:SetAnchor(RIGHT, control, LEFT, -15)
     summary:SetHidden(false)
-    zo_callLater(function ()
-                     local height = message:GetTextHeight()
-                     container:SetHeight(height)
-                     slider:SetMinMax(0, math.max(0, height - panel:GetHeight()))
-                 end, 400)
+    zo_callLater(GenerateClosure(self.UpdateReportSummaryLayout, self, message, container, slider, panel), 400)
+end
+
+function MSorter:UpdateReportSummaryLayout(message, container, slider, panel)
+    local height = message:GetTextHeight()
+    container:SetHeight(height)
+    slider:SetMinMax(0, math.max(0, height - panel:GetHeight()))
 end
 
 function MSorter:RefreshReportSummaryHiddenState()
-    local summary = MagicSorter_ReportSummary
+    local summary = GetControl("MagicSorter_ReportSummary")
     local sortManager = self:GetSortManager()
     if sortManager then
         local report = sortManager:GetLastReport()
@@ -332,7 +338,7 @@ function MSorter:ToggleDialogHidden(dialogName)
         SCENE_MANAGER:Show("hud")
         HousingEditorRequestModeChange(HOUSING_EDITOR_MODE_DISABLED)
         local visibleDialogs = self:GetDialogsByVisibility(false)
-        if not visibleDialogs or #visibleDialogs == 0 then
+        if ZO_IsTableEmpty(visibleDialogs) then
             self:SetDialogHidden(dialogName, false)
         end
     end
@@ -341,17 +347,21 @@ end
 
 function MSorter:SetUIMode(enabled)
     if enabled then
-        zo_callLater(function ()
-                         if not IsGameCameraUIModeActive() then
-                             SetGameCameraUIMode(true)
-                         end
-                     end, 50)
+        zo_callLater(GenerateFlatClosure(self.EnableUIMode, self), 50)
     else
-        zo_callLater(function ()
-                         if IsGameCameraUIModeActive() then
-                             SetGameCameraUIMode(false)
-                         end
-                     end, 50)
+        zo_callLater(GenerateFlatClosure(self.DisableUIMode, self), 50)
+    end
+end
+
+function MSorter:EnableUIMode()
+    if not IsGameCameraUIModeActive() then
+        SetGameCameraUIMode(true)
+    end
+end
+
+function MSorter:DisableUIMode()
+    if IsGameCameraUIModeActive() then
+        SetGameCameraUIMode(false)
     end
 end
 
@@ -465,7 +475,9 @@ function MSorter:GetOwnedHouses()
             table.insert(houses, house)
         end
     end
-    table.sort(houses, function (houseA, houseB) return houseA.houseName < houseB.houseName end)
+    table.sort(houses, function (houseA, houseB)
+        return houseA.houseName < houseB.houseName
+    end)
     return houses
 end
 
@@ -488,7 +500,7 @@ function MSorter:SetStorageHouses(houses)
             end
             previousHouses[houseId] = nil
         end
-        if changed or NonContiguousCount(previousHouses) ~= 0 then
+        if changed or not ZO_IsTableEmpty(previousHouses) then
             self:OnSettingsChanged()
         end
         return true
@@ -528,10 +540,8 @@ end
 
 function MSorter:OnSubmitCategoryAssignments()
     for _, house in pairs(self:GetStorageHouses()) do
-        if house.assignedCategoryIds then
-            for categoryId in pairs(house.assignedCategoryIds) do
-                return true
-            end
+        if house.assignedCategoryIds and not ZO_IsTableEmpty(house.assignedCategoryIds) then
+            return true
         end
     end
     return false
@@ -551,7 +561,7 @@ function MSorter:AddFurnitureCategory(categoryId, parentCategoryId, parentCatego
             else
                 displayName = string.format("%s, All", categoryName)
             end
-            local category = { id = categoryId, parentId = parentCategoryId or 0, name = categoryName, displayName = displayName, assignedHouseIds = {} }
+            category = { id = categoryId, parentId = parentCategoryId or 0, name = categoryName, displayName = displayName, assignedHouseIds = {} }
             self.furnitureCategories[categoryId] = category
             return category
         end
@@ -575,13 +585,13 @@ function MSorter:GetFurnitureCategories()
             if self:IsValidFurnitureCategory(categoryId) then
                 local category = self:AddFurnitureCategory(categoryId)
                 if category then
-                    local categoryId = category.id
+                    local parentCategoryId = category.id
                     local categoryName = category.name
-                    local numSubcategories = GetNumFurnitureSubcategories(categoryId)
+                    local numSubcategories = GetNumFurnitureSubcategories(parentCategoryId)
                     for subcategoryIndex = 1, numSubcategories do
                         local subcategoryId = GetFurnitureSubcategoryId(categoryIndex, subcategoryIndex)
-                        if self:IsValidFurnitureCategory(categoryId, subcategoryId) then
-                            self:AddFurnitureCategory(subcategoryId, categoryId, categoryName)
+                        if self:IsValidFurnitureCategory(parentCategoryId, subcategoryId) then
+                            self:AddFurnitureCategory(subcategoryId, parentCategoryId, categoryName)
                         end
                     end
                 end
@@ -643,9 +653,10 @@ function MSorter:GetHouseCategoryAssigmentsString(houseId)
     local houseCategories = self:GetHouseCategoryAssignments(houseId)
     if houseCategories then
         local categoryIds = {}
-        local categories = {}
-        ZO_DeepTableCopy(houseCategories, categories)
-        table.sort(categories, function (categoryA, categoryB) return categoryA.parentId < categoryB.parentId end)
+        local categories = ZO_DeepTableCopy(houseCategories)
+        table.sort(categories, function (categoryA, categoryB)
+            return categoryA.parentId < categoryB.parentId
+        end)
         for _, category in ipairs(categories) do
             categoryIds[category.id] = true
             if category.parentId == 0 or not categoryIds[category.parentId] then
@@ -728,7 +739,7 @@ function MSorter:UpdateKeybindStrip(addKeybinds)
 end
 
 function MSorter:OnSortManagerStateChanged(eventType, event, eventMessage)
-    local sortProgress = MagicSorter_StorageProgress
+    local sortProgress = GetControl("MagicSorter_StorageProgress")
     local isRunning = self:IsAutomaticStorageRunning()
     sortProgress:SetMessage(eventMessage)
     sortProgress:SetState(isRunning)
@@ -742,11 +753,11 @@ function MSorter:OnSortManagerStateChanged(eventType, event, eventMessage)
 end
 
 function MSorter:OnDropCategoryTag(control)
-    local houseBoxes = MagicSorter_CategoryAssignment.houseBoxes
+    local houseBoxes = GetControl("MagicSorter_CategoryAssignment").houseBoxes
     local dropTargetControl = self:GetMouseOverControl(houseBoxes)
     if control and control.category and dropTargetControl and dropTargetControl.house then
         self:AssignCategoryToHouse(dropTargetControl.house.houseId, control.category)
-        MagicSorter_CategoryAssignment:Refresh()
+        GetControl("MagicSorter_CategoryAssignment"):Refresh()
     end
 end
 
@@ -775,4 +786,275 @@ SLASH_COMMANDS["/resetmagicsort"] = function ()
     MAGIC_SORTER:GetConfig().dirty = false
     d("Quick Sort mode is now ready.")
 end
+
+SLASH_COMMANDS["/debugfurniture"] = function ()
+    local houseId = MAGIC_SORTER:GetSortManager():GetHouseId()
+    if houseId == 0 then
+        d("|cff0000Not in a house.|r")
+        return
+    end
+
+    local houseName = GetCollectibleName(GetCollectibleIdForHouse(houseId))
+    local furnitureData = {}
+    local categoryCounts = {}
+    local subcategoryCounts = {}
+
+    local furnitureId = GetNextPlacedHousingFurnitureId()
+    local itemCount = 0
+    while furnitureId do
+        itemCount = itemCount + 1
+        local itemName, _, furnitureDataId = GetPlacedHousingFurnitureInfo(furnitureId)
+        local categoryId, subcategoryId, themeId, limitId = GetFurnitureDataInfo(furnitureDataId)
+
+        local categoryName = GetFurnitureCategoryName(categoryId) or "Unknown"
+        local subcategoryName = GetFurnitureCategoryName(subcategoryId) or "Unknown"
+
+        local entry =
+        {
+            furnitureId = Id64ToString(furnitureId),
+            itemName = itemName or "Unknown",
+            categoryId = categoryId or 0,
+            subcategoryId = subcategoryId or 0,
+            categoryName = categoryName,
+            subcategoryName = subcategoryName,
+            themeId = themeId or 0,
+            limitId = limitId or 0,
+        }
+
+        table.insert(furnitureData, entry)
+
+        local catKey = string.format("%d_%s", categoryId or 0, categoryName)
+        categoryCounts[catKey] = (categoryCounts[catKey] or 0) + 1
+
+        local subcatKey = string.format("%d_%d_%s_%s", categoryId or 0, subcategoryId or 0, categoryName, subcategoryName)
+        subcategoryCounts[subcatKey] = (subcategoryCounts[subcatKey] or 0) + 1
+
+        furnitureId = GetNextPlacedHousingFurnitureId(furnitureId)
+    end
+
+    if not MAGIC_SORTER:GetData().debugFurniture then
+        MAGIC_SORTER:GetData().debugFurniture = {}
+    end
+
+    local debugEntry =
+    {
+        houseId = houseId,
+        houseName = houseName,
+        timestamp = GetTimeStamp(),
+        itemCount = itemCount,
+        furniture = furnitureData,
+        categoryCounts = categoryCounts,
+        subcategoryCounts = subcategoryCounts,
+    }
+
+    MAGIC_SORTER:GetData().debugFurniture[houseId] = debugEntry
+
+    d(string.format("|c00ffffDebug: Dumped %d furniture items from %s (House ID: %d)|r", itemCount, houseName, houseId))
+    d("|c00ffffData saved to saved variables.|r")
+
+    local sortManager = MAGIC_SORTER:GetSortManager()
+    local house = MAGIC_SORTER:GetStorageHouse(houseId)
+    if house then
+        d(string.format("|cffff00Storage house: Yes|r"))
+        if house.assignedCategoryIds then
+            local numCategories = 0
+            for _ in pairs(house.assignedCategoryIds) do
+                numCategories = numCategories + 1
+            end
+            d(string.format("|cffff00Assigned categories: %d|r", numCategories))
+        else
+            d("|cff0000Assigned categories: NONE|r")
+        end
+    else
+        d("|cff0000Storage house: No|r")
+    end
+
+    d("|c00ffffUse /dumpfurniture to see detailed output|r")
+end
+
+SLASH_COMMANDS["/dumpfurniture"] = function ()
+    local houseId = MAGIC_SORTER:GetSortManager():GetHouseId()
+    if houseId == 0 then
+        d("|cff0000Not in a house.|r")
+        return
+    end
+
+    local debugData = MAGIC_SORTER:GetData().debugFurniture
+    if not debugData or not debugData[houseId] then
+        d("|cff0000No debug data for this house. Run /debugfurniture first.|r")
+        return
+    end
+
+    local entry = debugData[houseId]
+    d(string.format("|c00ffff=== Furniture Debug: %s (House ID: %d) ===|r", entry.houseName, houseId))
+    d(string.format("Total items: %d", entry.itemCount))
+    d("|c00ffff--- Category Counts ---|r")
+
+    local sortedCategories = {}
+    for key, count in pairs(entry.categoryCounts) do
+        table.insert(sortedCategories, { key = key, count = count })
+    end
+    table.sort(sortedCategories, function (a, b)
+        return a.count > b.count
+    end)
+
+    for _, cat in ipairs(sortedCategories) do
+        d(string.format("  %s: %d", cat.key, cat.count))
+    end
+
+    d("|c00ffff--- Subcategory Counts ---|r")
+    local sortedSubcats = {}
+    for key, count in pairs(entry.subcategoryCounts) do
+        table.insert(sortedSubcats, { key = key, count = count })
+    end
+    table.sort(sortedSubcats, function (a, b)
+        return a.count > b.count
+    end)
+
+    for _, subcat in ipairs(sortedSubcats) do
+        d(string.format("  %s: %d", subcat.key, subcat.count))
+    end
+
+    d("|c00ffff--- First 20 Items ---|r")
+    for i = 1, math.min(20, #entry.furniture) do
+        local item = entry.furniture[i]
+        d(string.format("  %s: %s / %s (cat:%d subcat:%d)", item.itemName, item.categoryName, item.subcategoryName, item.categoryId, item.subcategoryId))
+    end
+
+    if #entry.furniture > 20 then
+        d(string.format("|c00ffff... and %d more items|r", #entry.furniture - 20))
+    end
+end
+
+SLASH_COMMANDS["/debugcategories"] = function ()
+    local sortManager = MAGIC_SORTER:GetSortManager()
+    -- Initialize configuration if needed
+    if not sortManager.categories then
+        if not sortManager:GetAndValidateConfiguration() then
+            d("|cff0000Failed to initialize configuration. Check storage houses.|r")
+            return
+        end
+    end
+
+    local houseId = sortManager:GetHouseId()
+    if houseId == 0 then
+        d("|cff0000Not in a house.|r")
+        return
+    end
+
+    local house = MAGIC_SORTER:GetStorageHouse(houseId)
+    if not house then
+        d("|cff0000Current house is not a storage house.|r")
+        return
+    end
+
+    local houseName = GetCollectibleName(GetCollectibleIdForHouse(houseId))
+    d(string.format("|c00ffff=== Category Debug for %s (House %d) ===|r", houseName, houseId))
+
+    -- Initialize saved vars
+    if not MAGIC_SORTER:GetData().debugCategories then
+        MAGIC_SORTER:GetData().debugCategories = {}
+    end
+
+    local debugData =
+    {
+        houseId = houseId,
+        houseName = houseName,
+        timestamp = GetTimeStamp(),
+        assignedCategoryIds = {},
+        categoriesTable = {},
+        testResults = {},
+        removableCount = 0,
+        outboundCount = 0,
+    }
+
+    -- Check assigned categories
+    if house.assignedCategoryIds then
+        for catId in pairs(house.assignedCategoryIds) do
+            table.insert(debugData.assignedCategoryIds, catId)
+        end
+        table.sort(debugData.assignedCategoryIds)
+        d(string.format("|cffff00Assigned category IDs: %s|r", table.concat(debugData.assignedCategoryIds, ", ")))
+    else
+        d("|cff0000No categories assigned to this house|r")
+    end
+
+    -- Check categories table
+    if sortManager.categories then
+        d("|c00ffff--- Categories Table ---|r")
+        local catCount = 0
+        for catId, houses in pairs(sortManager.categories) do
+            catCount = catCount + 1
+            local houseList = {}
+            for hId in pairs(houses) do
+                table.insert(houseList, tostring(hId))
+            end
+            local catName = GetFurnitureCategoryName(catId) or "Unknown"
+            local entry =
+            {
+                categoryId = catId,
+                categoryName = catName,
+                houseIds = houseList,
+            }
+            table.insert(debugData.categoriesTable, entry)
+            d(string.format("  Category %d (%s): houses %s", catId, catName, table.concat(houseList, ", ")))
+        end
+        d(string.format("Total categories in table: %d", catCount))
+    else
+        d("|cff0000Categories table not initialized|r")
+    end
+
+    -- Test multiple items from the debug data
+    d("|c00ffff--- Testing Item Removal Logic ---|r")
+    local testItems =
+    {
+        { categoryId = 12, subcategoryId = 152, themeId = 13, name = "Boulders and Large Rocks (Daedric)", },
+        { categoryId = 12, subcategoryId = 150, themeId = 13, name = "Giant Trees (Daedric)",              },
+        { categoryId = 12, subcategoryId = 149, themeId = 1,  name = "Ferns (Generic)",                    },
+        { categoryId = 13, subcategoryId = 185, themeId = 9,  name = "Buildings (Orc)",                    },
+        { categoryId = 25, subcategoryId = 31,  themeId = 0,  name = "Banking Assistants",                 },
+    }
+
+    for _, testItem in ipairs(testItems) do
+        local testResult =
+        {
+            categoryId = testItem.categoryId,
+            subcategoryId = testItem.subcategoryId,
+            themeId = testItem.themeId,
+            name = testItem.name,
+        }
+
+        local placeable = sortManager:IsFurniturePlaceableInHouse(houseId, testItem.categoryId, testItem.subcategoryId, testItem.themeId)
+        testResult.isPlaceableInHouse = placeable
+
+        local placeableAny = sortManager:IsFurniturePlaceableInAnyHouse(houseId, testItem.categoryId, testItem.subcategoryId, testItem.themeId)
+        testResult.isPlaceableInAnyHouse = placeableAny
+
+        local targetHouses = sortManager:GetHousesByFurnitureCategoryAndTheme(testItem.subcategoryId, testItem.themeId)
+        testResult.targetHouseIds = {}
+        for _, hId in ipairs(targetHouses) do
+            table.insert(testResult.targetHouseIds, hId)
+        end
+
+        table.insert(debugData.testResults, testResult)
+
+        d(string.format("  %s:", testItem.name))
+        d(string.format("    IsFurniturePlaceableInHouse: %s", tostring(placeable)))
+        d(string.format("    IsFurniturePlaceableInAnyHouse: %s", tostring(placeableAny)))
+        d(string.format("    Target houses: %s", table.concat(testResult.targetHouseIds, ", ")))
+    end
+
+    local removableList = sortManager:GetRemovableFurnitureList()
+    debugData.removableCount = #removableList
+    d(string.format("  GetRemovableFurnitureList: %d items", #removableList))
+
+    local outboundList = sortManager:GetOutboundFurnitureList()
+    debugData.outboundCount = #outboundList
+    d(string.format("  GetOutboundFurnitureList: %d items", #outboundList))
+
+    -- Save to SV
+    MAGIC_SORTER:GetData().debugCategories[houseId] = debugData
+    d("|c00ffffData saved to saved variables.|r")
+end
+
 SLASH_COMMANDS["/re"] = ReloadUI

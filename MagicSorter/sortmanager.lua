@@ -102,13 +102,6 @@ function MSortManager:WriteDebugReturn(procedureName, ...)
     end
 end
 
-function MSortManager:New(...)
-    local object = setmetatable({}, self)
-    ---@cast object MSortManager
-    object:Initialize(...)
-    return object
-end
-
 function MSortManager:Initialize(dataManager)
     self.actionLog = {}
     self.debugEnabled = false
@@ -116,7 +109,7 @@ function MSortManager:Initialize(dataManager)
     self:ClearState()
     self:InitializeStaticData()
     self:SetIsRunning(false)
-    SLASH_COMMANDS["/debugmagicsorter"] = function () self:ToggleDebug() end
+    SLASH_COMMANDS["/debugmagicsorter"] = GenerateFlatClosure(self.ToggleDebug, self)
 end
 
 function MSortManager:InitializeStaticData()
@@ -205,11 +198,19 @@ function MSortManager:InitializeStaticData()
         end
         table.insert(self.FurnitureThemeList, { id = themeId, name = themeName, sortWeight = sortWeight })
     end
-    table.sort(self.FurnitureThemeList, function (a, b) return a.sortWeight < b.sortWeight or (a.sortWeight == b.sortWeight and a.name < b.name) end)
+    table.sort(self.FurnitureThemeList, function (a, b)
+        return a.sortWeight < b.sortWeight or (a.sortWeight == b.sortWeight and a.name < b.name)
+    end)
 end
 
 function MSortManager:GetDataManager()
     return self.dataManager
+end
+
+function MSortManager:OnNoHomesException()
+    local dataManager = self:GetDataManager()
+    dataManager:SetAllDialogsHidden()
+    dataManager:StartStorageWizard()
 end
 
 function MSortManager:IsRunning()
@@ -249,7 +250,7 @@ function MSortManager:LogAction(action)
         table.remove(self.actionLog, self.MaxActionLogLines + 1)
         iterations = iterations + 1
     end
-    MagicSorter_StorageProgressDetail:RefreshActionLog()
+    GetControl("MagicSorter_StorageProgressDetail"):RefreshActionLog()
 end
 
 function MSortManager:GetActionLog()
@@ -275,10 +276,12 @@ end
 function MSortManager:RefreshPlacementLocation()
     SCENE_MANAGER:Show("hud")
     HousingEditorJumpToSafeLocation()
-    zo_callLater(function ()
-                     self.placementX, self.placementY, self.placementZ, self.placementHeading = nil, nil, nil, nil
-                     self.placementX, self.placementY, self.placementZ, self.placementHeading = self:GetPlacementLocation()
-                 end, 350)
+    zo_callLater(GenerateFlatClosure(self.UpdatePlacementLocation, self), 350)
+end
+
+function MSortManager:UpdatePlacementLocation()
+    self.placementX, self.placementY, self.placementZ, self.placementHeading = nil, nil, nil, nil
+    self.placementX, self.placementY, self.placementZ, self.placementHeading = self:GetPlacementLocation()
 end
 
 function MSortManager:GetEventTypeString(eventType, event, ...)
@@ -302,10 +305,7 @@ function MSortManager:OnStateChanged(eventType, event, ...)
     local suppressLogAction = false
     if eventType == "EXCEPTION" then
         if event == "NO_HOMES" then
-            zo_callLater(function ()
-                             self:SetAllDialogsHidden(true)
-                             self:StartStorageWizard()
-                         end, 3000)
+            zo_callLater(GenerateFlatClosure(self.OnNoHomesException, self), 3000)
         end
     elseif eventType == "STATE" then
         if event == "RESUME" then
@@ -350,7 +350,7 @@ function MSortManager:OnPlayerActivated(...)
             if self:GetHouseId() == self.jumpHouse.houseId then
                 self:WriteDebug("Jump complete.")
                 self.jumpHouse = nil
-                zo_callLater(function () self:OrganizeHouse() end, 1200)
+                zo_callLater(GenerateFlatClosure(self.OrganizeHouse, self), 1200)
             else
                 self:WriteDebug("Incorrect jump destination.")
                 self:JumpToHouse(self.jumpHouse)
@@ -429,7 +429,7 @@ function MSortManager:Complete()
             local categoryId, subcategoryId, themeId, limitId = self:GetFurnitureCategoryByBagAndSlot(bagId, slotIndex)
             if subcategoryId then
                 local themeFiltered = false
-                local eligibleHouses = self:GetHousesByFurnitureCategoryAndTheme(subcategoryId)
+                local eligibleHouses = self:GetHousesByFurnitureCategoryAndTheme(subcategoryId, nil, categoryId)
                 if eligibleHouses then
                     for _, houseId in ipairs(eligibleHouses) do
                         if self:DoesHouseHaveCapacity(houseId, limitId, 1) then
@@ -459,7 +459,7 @@ function MSortManager:Complete()
             removableCount = #removables
         end
         if removableCount > 0 then
-            local themeFiltered = "table" == type(house.assignedThemeIds) and NonContiguousCount(house.assignedThemeIds) ~= 0
+            local themeFiltered = "table" == type(house.assignedThemeIds) and not ZO_IsTableEmpty(house.assignedThemeIds)
             for _, item in pairs(removables) do
                 local categoryId, subcategoryId, themeId = item.categoryId, item.subcategoryId, item.themeId
                 if subcategoryId then
@@ -480,7 +480,7 @@ function MSortManager:Complete()
     end
 
     table.insert(report, "MAGIC SORTER REPORT")
-    if NonContiguousCount(categoryCapacityDeficits) == 0 then
+    if ZO_IsTableEmpty(categoryCapacityDeficits) then
         table.insert(report, "Storage home capacity was sufficient for all furnishings.")
     else
         table.insert(report, "|cffffaaInsufficient storage capacity|cffffff for these categories / styles:")
@@ -500,7 +500,9 @@ function MSortManager:Complete()
             end
             table.insert(deficitReport, categoryDeficit)
         end
-        table.sort(deficitReport, function (categoryA, categoryB) return categoryA.categoryName < categoryB.categoryName end)
+        table.sort(deficitReport, function (categoryA, categoryB)
+            return categoryA.categoryName < categoryB.categoryName
+        end)
 
         local previousParentCategoryName, previousParentCategoryCount = "", 0
         local parentCategoryFormat = "  |cffff33%d item%s|c33ffff, %s"
@@ -533,18 +535,12 @@ end
 
 function MSortManager:GetAndValidateConfiguration()
     local data = self:GetDataManager()
-    local houses = {}
-    ZO_DeepTableCopy(data:GetStorageHouses(), houses)
-    self.houses = houses
-    if not houses or NonContiguousCount(houses) == 0 then
+    self.houses = ZO_DeepTableCopy(data:GetStorageHouses())
+    if ZO_IsTableEmpty(self.houses) then
         return false
     end
 
-    local houseList = {}
-    self.houseList = houseList
-    for houseId, house in pairs(self.houses) do
-        table.insert(houseList, house)
-    end
+    self.houseList = ZO_CreateSortableTableFromValues(self.houses)
 
     local categories = {}
     self.categories = categories
@@ -582,9 +578,7 @@ end
 function MSortManager:RegisterInventorySpaceCheck(minimumSlots)
     self.minimumSlots = minimumSlots or 1
     local myself = self
-    EVENT_MANAGER:RegisterForUpdate(self:GetDataManager().EventDescriptor .. "InventorySpace", 2000, function ()
-        myself:OnInventorySpaceCheck()
-    end)
+    EVENT_MANAGER:RegisterForUpdate(self:GetDataManager().EventDescriptor .. "InventorySpace", 2000, GenerateFlatClosure(myself.OnInventorySpaceCheck, myself))
 end
 
 function MSortManager:ValidateInventorySpace(minimumSlots)
@@ -636,19 +630,44 @@ function MSortManager:GetFurnitureCategoryByBagAndSlot(bagId, slotIndex)
     return nil
 end
 
-function MSortManager:GetHousesByFurnitureCategoryAndTheme(subcategoryId, themeId)
+function MSortManager:GetHousesByFurnitureCategoryAndTheme(subcategoryId, themeId, categoryId)
     local houses = {}
+    local checkedHouses = {}
+
+    -- First check if subcategory is directly assigned
     local subcategory = self.categories[subcategoryId]
     if subcategory then
         for houseId in pairs(subcategory) do
+            checkedHouses[houseId] = true
             local house = self.houses[houseId]
             if house then
-                if not house.assignedThemeIds or NonContiguousCount(house.assignedThemeIds) == 0 or house.assignedThemeIds[themeId] then
+                if ZO_IsTableEmpty(house.assignedThemeIds) or house.assignedThemeIds[themeId] then
                     table.insert(houses, houseId)
                 end
             end
         end
     end
+
+    -- If categoryId provided, also check parent category assignment
+    if categoryId and categoryId ~= subcategoryId then
+        local parentCategory = self.categories[categoryId]
+        if parentCategory then
+            for houseId in pairs(parentCategory) do
+                if not checkedHouses[houseId] then
+                    local house = self.houses[houseId]
+                    if house then
+                        -- Check if this house has the subcategory assigned (via parent category)
+                        if house.assignedCategoryIds and (house.assignedCategoryIds[subcategoryId] or house.assignedCategoryIds[categoryId]) then
+                            if ZO_IsTableEmpty(house.assignedThemeIds) or house.assignedThemeIds[themeId] then
+                                table.insert(houses, houseId)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     return houses
 end
 
@@ -681,7 +700,9 @@ function MSortManager:GetStoredFurniture()
             furnitureId = GetNextPlacedHousingFurnitureId(furnitureId)
         end
     end
-    table.sort(items, function (itemA, itemB) return itemA.name < itemB.name end)
+    table.sort(items, function (itemA, itemB)
+        return itemA.name < itemB.name
+    end)
     return items
 end
 
@@ -694,7 +715,7 @@ function MSortManager:IsFurnitureRemovableFromHouse(houseId, furnitureId, catego
     end
     local house = self.houses[houseId]
     if house then
-        if house.assignedThemeIds and NonContiguousCount(house.assignedThemeIds) ~= 0 and not house.assignedThemeIds[themeId] then
+        if house.assignedThemeIds and not ZO_IsTableEmpty(house.assignedThemeIds) and not house.assignedThemeIds[themeId] then
             return true
         end
     end
@@ -727,17 +748,32 @@ function MSortManager:IsBagFurniturePlaceableInAnyHouse(bagId, slotIndex)
 end
 
 function MSortManager:IsFurniturePlaceableInHouse(houseId, categoryId, subcategoryId, themeId)
+    local house = self.houses[houseId]
+    if not house then
+        return false
+    end
+
+    -- Check if subcategory is directly assigned
     local subcategory = self.categories[subcategoryId]
-    if subcategory then
-        if subcategory[houseId] then
-            local house = self.houses[houseId]
-            if house then
+    if subcategory and subcategory[houseId] then
+        if not house.assignedThemeIds or NonContiguousCount(house.assignedThemeIds) == 0 or house.assignedThemeIds[themeId] then
+            return true
+        end
+    end
+
+    -- Check if parent category is assigned (which includes all subcategories)
+    if categoryId and categoryId ~= subcategoryId then
+        local parentCategory = self.categories[categoryId]
+        if parentCategory and parentCategory[houseId] then
+            -- Verify the house actually has this category/subcategory assigned
+            if house.assignedCategoryIds and (house.assignedCategoryIds[subcategoryId] or house.assignedCategoryIds[categoryId]) then
                 if not house.assignedThemeIds or NonContiguousCount(house.assignedThemeIds) == 0 or house.assignedThemeIds[themeId] then
                     return true
                 end
             end
         end
     end
+
     return false
 end
 
@@ -855,7 +891,7 @@ function MSortManager:PreCalculateHouseRemovables(currentHouseIndex)
             self:SetHouseRemovables(houseId, list)
         end
 
-        zo_callLater(function () self:PreCalculateHouseRemovables(currentHouseIndex + 1) end, 10)
+        zo_callLater(GenerateClosure(self.PreCalculateHouseRemovables, self, currentHouseIndex + 1), 10)
         return
     end
 
@@ -875,14 +911,15 @@ function MSortManager:GetOutboundFurnitureList(houseId)
     end
     for _, item in pairs(items) do
         local furnitureId = item.furnitureId
+        local categoryId = item.categoryId
         local subcategoryId = item.subcategoryId
         local themeId = item.themeId
         local limitType = item.limitType
         local stackSize = item.stackSize or 1
-        local targetHouses = self:GetHousesByFurnitureCategoryAndTheme(subcategoryId, themeId)
+        local targetHouses = self:GetHousesByFurnitureCategoryAndTheme(subcategoryId, themeId, categoryId)
         for _, targetHouseId in ipairs(targetHouses) do
             local targetHouse = self.houses[targetHouseId]
-            if targetHouse and self:HasVisitedHouse(targetHouseId) then
+            if targetHouse then
                 local bucket = targetBuckets[targetHouseId]
                 if not bucket then
                     bucket = {}
@@ -1033,7 +1070,9 @@ function MSortManager:OnOrganizeFurniture()
             local x, y, z = HousingEditorGetFurnitureWorldPosition(item.furnitureId)
             local pitch, yaw, roll = HousingEditorGetFurnitureOrientation(item.furnitureId)
             local yawp = math.abs(yaw - item.yaw)
-            if yawp > PI then yawp = PI2 - yawp end
+            if yawp > PI then
+                yawp = PI2 - yawp
+            end
             local yawc = yawp > EPSILON and (math.abs(PI2 - (yawp + PI)) % PI2) > EPSILON
             if math.abs(x - item.x) > 5 or math.abs(y - item.y) > 5 or math.abs(z - item.z) > 5 or yawc then
                 HousingEditorRequestChangePositionAndOrientation(item.furnitureId, item.x, item.y, item.z, item.pitch, item.yaw, item.roll)
@@ -1067,7 +1106,7 @@ function MSortManager:OrganizeFurniture()
     local items = self:GetStoredFurniture()
     if #items == 0 then
         local myself = self
-        zo_callLater(function () myself:OrganizeHouse(true) end, 100)
+        zo_callLater(GenerateClosure(myself.OrganizeHouse, myself, true), 100)
         return
     end
     table.sort(items, function (itemA, itemB)
@@ -1106,7 +1145,7 @@ function MSortManager:OrganizeFurniture()
     local currentX, currentY, currentZ, groupOffset = nil, 0, 0, 0
     local previousSizeX, previousSizeY, previousSizeZ = 0, 0, 0
     local iterationsY, maxY = 0, 0
-    groupIndex = nil
+    local currentGroupIndex = nil
     local function AdvancePosition(item)
         if not currentX or (math.abs(minOffsetX) > maxExtentX and maxOffsetX > maxExtentX) then
             if currentX then
@@ -1134,12 +1173,12 @@ function MSortManager:OrganizeFurniture()
         currentZ = minOffsetZ + 0.5 * item.sizeZ
     end
     for index, item in ipairs(items) do
-        if not groupIndex then
-            groupIndex = item.groupIndex
+        if not currentGroupIndex then
+            currentGroupIndex = item.groupIndex
             groupOffset = 1
             AdvancePosition(item)
-        elseif groupIndex ~= item.groupIndex then
-            groupIndex = item.groupIndex
+        elseif currentGroupIndex ~= item.groupIndex then
+            currentGroupIndex = item.groupIndex
             groupOffset = 1
             AdvancePosition(item)
         else
@@ -1155,7 +1194,7 @@ function MSortManager:OrganizeFurniture()
     self.organizeItems = items
     self.organizeItemIndex = 1
     self:OnStateChanged("ORGANIZE", "ORGANIZE")
-    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["ORGANIZE"], 130, function () self:OnOrganizeFurniture() end)
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["ORGANIZE"], 130, GenerateFlatClosure(self.OnOrganizeFurniture, self))
 end
 
 function MSortManager:OrganizeHouse(skipFurnitureOrganization, skipCurrentHouse)
@@ -1187,7 +1226,7 @@ function MSortManager:OrganizeHouse(skipFurnitureOrganization, skipCurrentHouse)
     end
     local nextHouse = self:GetNextHouse()
     if not skipFurnitureOrganization and self:GetDataManager():IsOrganizationEnabled() then
-        zo_callLater(function () self:OrganizeFurniture() end, 650)
+        zo_callLater(GenerateFlatClosure(self.OrganizeFurniture, self), 650)
         return
     end
     if nextHouse then
@@ -1209,7 +1248,7 @@ function MSortManager:SwapFurniture(house)
     end
     self:OnStateChanged("SWAP", "SWAP")
     local myself = self
-    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["SWAP"], self.SwapIntervalMS, function () myself:SwapAnyItem() end)
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["SWAP"], self.SwapIntervalMS, GenerateFlatClosure(myself.SwapAnyItem, myself))
 end
 
 function MSortManager:SwapAnyItem()
@@ -1273,7 +1312,7 @@ function MSortManager:OnJumpToHouseFailed(house)
         return
     end
     local myself = self
-    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], 2000, function () myself:RetryJumpToHouse() end)
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], 2000, GenerateFlatClosure(myself.RetryJumpToHouse, myself))
 end
 
 do
@@ -1287,9 +1326,9 @@ do
                 nextJumpAllowedMS = frameTime + 1000
                 EVENT_MANAGER:UnregisterForUpdate(self.EventDescriptors["JUMP"])
                 self:OnStateChanged("JUMP", isRetry and "RETRY" or "JUMP", house.houseName)
-                RequestJumpToHouse(house.houseId)
+                RequestJumpToHouse(house.houseId, false)
                 local myself = self
-                EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], isRetry and self.RetryJumpTimeoutMS or self.JumpTimeoutMS, function () myself:OnJumpToHouseFailed(house) end)
+                EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], isRetry and self.RetryJumpTimeoutMS or self.JumpTimeoutMS, GenerateClosure(myself.OnJumpToHouseFailed, myself, house))
             else
                 self:WriteDebug("Jump deferred pending player activation.")
             end
@@ -1310,7 +1349,7 @@ function MSortManager:JumpToHouse(house)
     CancelCast()
     self.jumpHouse = house
     local myself = self
-    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], 2000, function () myself:RequestJumpToHouse(house, false) end)
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], 2000, GenerateClosure(myself.RequestJumpToHouse, myself, house, false))
 end
 
 function MSortManager:RetryJumpToHouse()
@@ -1327,7 +1366,7 @@ function MSortManager:RetryJumpToHouse()
     CancelCast()
     self.jumpHouse = house
     local myself = self
-    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], 2000, function () myself:RequestJumpToHouse(house, true) end)
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["JUMP"], 2000, GenerateClosure(myself.RequestJumpToHouse, myself, house, true))
 end
 
 function MSortManager:RemoveFurniture(furnitureId)

@@ -6,13 +6,6 @@ function InstantiateMagicInventoryManager(dataManager)
     return manager
 end
 
-function MInventoryManager:New(...)
-    local object = setmetatable({}, self)
-    ---@cast object MInventoryManager
-    object:Initialize(...)
-    return object
-end
-
 function MInventoryManager:Initialize(dataManager)
     self.dataManager = dataManager
     self.bagStatistics = {}
@@ -30,7 +23,7 @@ function MInventoryManager:InitializeSavedVars()
     local inventory = self:GetInventoryData()
     if "table" ~= type(inventory) then
         inventory = {}
-        self.dataManager:GetData().inventory = inventory
+        dataManager:GetData().inventory = inventory
     end
     if "table" ~= type(inventory.bags) then
         inventory.bags = {}
@@ -113,6 +106,13 @@ function MInventoryManager:GetItemLinkItemId(link)
     return itemId or 0
 end
 
+---
+---@param link string
+---@return string|nil link
+---@return integer|nil categoryId
+---@return integer|nil subcategoryId
+---@return FurnitureThemeType|nil furnitureTheme
+---@return HousingFurnishingLimitType|nil placementLimitType
 function MInventoryManager:GetFurnitureLinkInfo(link)
     if link and link ~= "" then
         local furnitureDataId = GetItemLinkFurnitureDataId(link)
@@ -175,7 +175,7 @@ end
 
 function MInventoryManager:GetBagInventory(bagId)
     if tonumber(bagId) then
-        bagId = tonumber(bagId)
+        bagId = assert(tonumber(bagId))
         local inventory = self:GetInventoryData().bags[bagId]
         if not inventory then
             inventory = {}
@@ -202,7 +202,7 @@ function MInventoryManager:GetHouseInventory(houseId)
         houseId = self:GetHouseId()
     end
     if tonumber(houseId) then
-        houseId = tonumber(houseId)
+        houseId = assert(tonumber(houseId))
         local inventory = self:GetInventoryData().houses[houseId]
         if not inventory then
             inventory = {}
@@ -212,12 +212,15 @@ function MInventoryManager:GetHouseInventory(houseId)
     end
 end
 
+---
+---@return string characterId
+---@return string characterName
 function MInventoryManager:GetCurrentCharacter()
     local numCharacters = GetNumCharacters()
     local characterId = GetCurrentCharacterId()
-    local characterName
+    local characterName = zo_strformat("<<1>>", GetUnitName("player"))
     for index = 1, numCharacters do
-        local name, gender, level, classId, raceId, alliance, id, locationId = GetCharacterInfo(index)
+        local name, _, _, _, _, _, id, _ = GetCharacterInfo(index)
         if id == characterId then
             characterName = name
             break
@@ -407,7 +410,6 @@ function MInventoryManager:UpdateBagInventory(bag)
     if inventory then
         self:FlushBagStatistics(bag)
         ZO_ClearTable(inventory)
-        local bag = self.InventoryBag
         local numSlots = GetBagSize(bag)
         for slot = 0, numSlots - 1 do
             local link = self:GetBagFurnitureInfo(bag, slot)
@@ -471,19 +473,19 @@ function MInventoryManager:UpdateHouseInventory()
 end
 
 function MInventoryManager:QueueDeferredBagInventoryUpdate(bag)
-    --self.queuedBagUpdates[bag] = true
-    --EVENT_MANAGER:UnregisterForUpdate(self.EventDescriptors["UPDATE_BAG"])
-    --EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["UPDATE_BAG"], 200, function() self:UpdateBagInventories() end)
+    self.queuedBagUpdates[bag] = true
+    EVENT_MANAGER:UnregisterForUpdate(self.EventDescriptors["UPDATE_BAG"])
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["UPDATE_BAG"], 200, GenerateFlatClosure(self.UpdateBagInventories, self))
 end
 
 function MInventoryManager:QueueDeferredCharacterInventoryUpdate()
-    --EVENT_MANAGER:UnregisterForUpdate(self.EventDescriptors["UPDATE_CHARACTER"])
-    --EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["UPDATE_CHARACTER"], 200, function() self:UpdateCharacterInventory() end)
+    EVENT_MANAGER:UnregisterForUpdate(self.EventDescriptors["UPDATE_CHARACTER"])
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["UPDATE_CHARACTER"], 200, GenerateFlatClosure(self.UpdateCharacterInventory, self))
 end
 
 function MInventoryManager:QueueDeferredHouseInventoryUpdate()
     EVENT_MANAGER:UnregisterForUpdate(self.EventDescriptors["UPDATE_HOUSE"])
-    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["UPDATE_HOUSE"], 200, function () self:UpdateHouseInventory() end)
+    EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["UPDATE_HOUSE"], 200, GenerateFlatClosure(self.UpdateHouseInventory, self))
 end
 
 function MInventoryManager:CalculateInventoryTransferStatistics(sourceInventory, destinationInventory, operator)
@@ -509,9 +511,13 @@ function MInventoryManager:CalculateInventoryTransferStatistics(sourceInventory,
                     stats.categories[categoryId] = category
                 end
                 category.count = category.count + coeff
-                category.subcategories[subcategoryId] = (category.subcategories[subcategoryId] or 0) + coeff
-                stats.themes[themeId] = (stats.themes[themeId] or 0) + coeff
-                if stats.limits[limitId] then
+                if subcategoryId then
+                    category.subcategories[subcategoryId] = (category.subcategories[subcategoryId] or 0) + coeff
+                end
+                if themeId then
+                    stats.themes[themeId] = (stats.themes[themeId] or 0) + coeff
+                end
+                if limitId and stats.limits[limitId] then
                     stats.limits[limitId] = stats.limits[limitId] + coeff
                 end
             end
@@ -523,11 +529,7 @@ end
 function MInventoryManager:QueryInventoryItems(inventory, query)
     local results = {}
     if "table" == type(inventory) and "table" == type(query) then
-        do
-            local copy = {}
-            ZO_DeepTableCopy(query, copy)
-            query = copy
-        end
+        query = ZO_DeepTableCopy(query)
         for _, item in ipairs(inventory) do
             local link, categoryId, subcategoryId, themeId, limitId = self:GetFurnitureItemIdInfo(item.itemId)
             if link and link ~= "" and categoryId and categoryId ~= 0 then
@@ -560,13 +562,13 @@ function MInventoryManager:QueryInventoryItems(inventory, query)
                     end
                 end
                 if include then
-                    if matchedCategory then
+                    if matchedCategory and subcategoryId then
                         query.categories[subcategoryId] = query.categories[subcategoryId] - 1
                     end
-                    if matchedTheme then
+                    if matchedTheme and themeId then
                         query.themes[themeId] = query.themes[themeId] - 1
                     end
-                    if matchedLimit then
+                    if matchedLimit and limitId then
                         query.limits[limitId] = query.limits[limitId] - 1
                     end
                     table.insert(results, item)
@@ -574,9 +576,7 @@ function MInventoryManager:QueryInventoryItems(inventory, query)
             end
         end
         if query.copy then
-            local copy = {}
-            ZO_DeepTableCopy(results, copy)
-            results = copy
+            results = ZO_DeepTableCopy(results)
         end
     end
     return results
@@ -631,25 +631,29 @@ end
 do
     local function AddTooltipHandler(control, method, linkFunction)
         local original = control[method]
-        control[method] = function (control, ...)
+        control[method] = function (self, ...)
             if original then
-                original(control, ...)
+                original(self, ...)
             end
             local itemLink = linkFunction(...)
             if itemLink then
-                MAGIC_SORTER:GetInventoryManager():AppendFurnitureTooltipInfo(control, itemLink)
+                MAGIC_SORTER:GetInventoryManager():AppendFurnitureTooltipInfo(self, itemLink)
             end
         end
     end
 
     function MInventoryManager:InitializeTooltipHandlers()
-        AddTooltipHandler(PopupTooltip, "SetLink", function (itemLink) return itemLink end)
+        AddTooltipHandler(PopupTooltip, "SetLink", function (itemLink)
+            return itemLink
+        end)
         AddTooltipHandler(ItemTooltip, "SetAttachedMailItem", GetAttachedItemLink)
         AddTooltipHandler(ItemTooltip, "SetBagItem", GetItemLink)
         AddTooltipHandler(ItemTooltip, "SetLootItem", GetLootItemLink)
         AddTooltipHandler(ItemTooltip, "SetStoreItem", GetStoreItemLink)
         AddTooltipHandler(ItemTooltip, "SetTradeItem", GetTradeItemLink)
         AddTooltipHandler(ItemTooltip, "SetTradingHouseListing", GetTradingHouseListingItemLink)
-        AddTooltipHandler(ItemTooltip, "SetPlacedFurniture", function (furnitureId) return GetPlacedFurnitureLink(furnitureId) end)
+        AddTooltipHandler(ItemTooltip, "SetPlacedFurniture", function (furnitureId)
+            return GetPlacedFurnitureLink(furnitureId)
+        end)
     end
 end

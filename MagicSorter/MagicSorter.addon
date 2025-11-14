@@ -1,9 +1,9 @@
 ﻿## Title: Magic Sorter
 ## Description: Easy and automatic storage of your unused furniture in your unused houses.
 ## Author: @Architectura
-## APIVersion: 101046 101047
-## AddOnVersion: 23
-## Version: 23
+## APIVersion: 101048 101049
+## AddOnVersion: 25
+## Version: 25
 ## SavedVariables: MagicSorter
 
 ; The MIT License (MIT)
@@ -26,8 +26,10 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
+function_util.lua
 inventorymanager.lua
 sortmanager.lua
 magicsorter.lua
+dialogs.lua
 dialogs.xml
 bindings.xml
