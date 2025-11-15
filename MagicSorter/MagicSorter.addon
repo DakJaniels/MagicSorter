@@ -30,6 +30,7 @@ function_util.lua
 inventorymanager.lua
 sortmanager.lua
 magicsorter.lua
+dialogs_constants.lua
 dialogs.lua
 dialogs.xml
 bindings.xml

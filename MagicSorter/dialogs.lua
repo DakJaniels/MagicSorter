@@ -1,6 +1,11 @@
 ---@diagnostic disable: undefined-field, param-type-mismatch
----@class MagicSorterDialogs
-MagicSorterDialogs = {}
+
+local eventManager = GetEventManager()
+local windowManager = GetWindowManager()
+local animationManager = GetAnimationManager()
+
+-- Constants (defined in dialogs_constants.lua)
+local C = MagicSorterDialogs.Constants
 
 -- Animation Update Functions
 ---@param animation AnimationTimeline
@@ -15,38 +20,39 @@ end
 function MagicSorterDialogs.LogoAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local logo, logo1, logo2, logo3 = control.logo, control.logo1, control.logo2, control.logo3
-    local base, coeff = 0.5, 20
+    local base = C.RGB_WEIGHT_BASE
+    local coeff = C.RGB_WEIGHT_COEFFICIENT
     local interval
 
-    interval = zo_lerp(0, 1, 4 * progress)
-    if interval >= 0 and 1 >= interval then
+    interval = zo_lerp(C.ALPHA_NONE, C.ALPHA_FULL, C.LOGO_ANIMATION_PROGRESS_MULTIPLIER * progress)
+    if interval >= C.ALPHA_NONE and C.ALPHA_FULL >= interval then
         interval = zo_sin(interval * 2 * ZO_PI)
         logo1:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, base + coeff * interval)
-        logo1:SetVertexColors(1 + 4, 0.5, 1, 1, 0.1 * interval)
-        logo1:SetVertexColors(2 + 8, 0.5, 1, 1, 0)
+        logo1:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.LOGO_COLOR_R_1, C.LOGO_COLOR_G_1, C.LOGO_COLOR_B_1, C.ALPHA_LOGO_INTERVAL_MULTIPLIER * interval)
+        logo1:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.LOGO_COLOR_R_1, C.LOGO_COLOR_G_1, C.LOGO_COLOR_B_1, C.ALPHA_NONE)
         logo1:SetHidden(false)
     else
         logo1:SetHidden(true)
     end
 
-    interval = zo_lerp(0, 1, -0.13 + 4 * progress)
-    if interval >= 0 and 1 >= interval then
+    interval = zo_lerp(C.ALPHA_NONE, C.ALPHA_FULL, C.LOGO_ANIMATION_OFFSET_1 + C.LOGO_ANIMATION_PROGRESS_MULTIPLIER * progress)
+    if interval >= C.ALPHA_NONE and C.ALPHA_FULL >= interval then
         interval = zo_sin(interval * 2 * ZO_PI)
         logo2:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, base + coeff * interval)
-        logo2:SetAlpha(0.1 * interval)
+        logo2:SetAlpha(C.ALPHA_LOGO_INTERVAL_MULTIPLIER * interval)
         logo2:SetHidden(false)
-        logo:SetAlpha(1 - interval)
+        logo:SetAlpha(C.ALPHA_FULL - interval)
     else
         logo2:SetHidden(true)
-        logo:SetAlpha(1)
+        logo:SetAlpha(C.ALPHA_FULL)
     end
 
-    interval = zo_lerp(0, 1, -0.26 + 4 * progress)
-    if interval >= 0 and 1 >= interval then
+    interval = zo_lerp(C.ALPHA_NONE, C.ALPHA_FULL, C.LOGO_ANIMATION_OFFSET_2 + C.LOGO_ANIMATION_PROGRESS_MULTIPLIER * progress)
+    if interval >= C.ALPHA_NONE and C.ALPHA_FULL >= interval then
         interval = zo_sin(interval * 2 * ZO_PI)
         logo3:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, base + coeff * interval)
-        logo3:SetVertexColors(2 + 8, 1, 0.5, 1, 0.1 * interval)
-        logo3:SetVertexColors(1 + 4, 1, 0.5, 1, 0)
+        logo3:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.LOGO_COLOR_R_3, C.LOGO_COLOR_G_3, C.LOGO_COLOR_B_3, C.ALPHA_LOGO_INTERVAL_MULTIPLIER * interval)
+        logo3:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.LOGO_COLOR_R_3, C.LOGO_COLOR_G_3, C.LOGO_COLOR_B_3, C.ALPHA_NONE)
         logo3:SetHidden(false)
     else
         logo3:SetHidden(true)
@@ -58,14 +64,14 @@ end
 function MagicSorterDialogs.DragTagHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local backdrop = control:GetNamedChild("LabelBackdrop")
-    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 1 + 0.5 * progress)
+    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_DRAG_TAG_HIGHLIGHT_MIN + C.RGB_WEIGHT_DRAG_TAG_HIGHLIGHT_MAX * progress)
 end
 
 ---@param animation MagicSorter_RemoveButtonHighlightAnimation
 ---@param progress number
 function MagicSorterDialogs.RemoveButtonHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
-    control:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 1 + 0.7 * progress)
+    control:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_REMOVE_BUTTON_HIGHLIGHT_MIN + C.RGB_WEIGHT_REMOVE_BUTTON_HIGHLIGHT_MAX * progress)
 end
 
 ---@param animation AnimationTimeline
@@ -73,9 +79,9 @@ end
 function MagicSorterDialogs.ButtonHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local backdrop = control:GetNamedChild("Backdrop")
-    local color = zo_lerp(0.5, 0.75, progress)
-    backdrop:SetColor(0.75 * color, color, color, 1)
-    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 2 + 0.5 * progress)
+    local color = zo_lerp(C.COLOR_LERP_BUTTON_HIGHLIGHT_MIN, C.COLOR_LERP_BUTTON_HIGHLIGHT_MAX, progress)
+    backdrop:SetColor(C.COLOR_LERP_BUTTON_HIGHLIGHT_MULTIPLIER * color, color, color, C.ALPHA_FULL)
+    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_BUTTON_HIGHLIGHT_MIN + C.RGB_WEIGHT_BUTTON_HIGHLIGHT_MAX * progress)
 end
 
 ---@param animation AnimationTimeline
@@ -84,7 +90,7 @@ function MagicSorterDialogs.ToggleHoverAnimation_UpdateFunction(animation, progr
     progress = ZO_EaseInCubic(progress)
     local backdrop = animation:GetAnimatedControl().backdrop
     ---@cast backdrop TextureControl
-    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 2 + 0.6 * progress)
+    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_TOGGLE_HOVER_MIN + C.RGB_WEIGHT_TOGGLE_HOVER_MAX * progress)
 end
 
 ---@param animation AnimationTimeline
@@ -92,11 +98,11 @@ end
 function MagicSorterDialogs.ToggleSelectAnimation_UpdateFunction(animation, progress)
     progress = ZO_EaseInCubic(progress)
     local control = animation:GetAnimatedControl()
-    local r = zo_lerp(0.75, 1, progress)
-    control.label:SetColor(r, 1, 1, 1)
-    r = zo_lerp(0.0625, 1, progress)
-    local g = zo_lerp(0.3125, 1, progress)
-    control.backdrop:SetColor(r, g, 0.3125, 1)
+    local r = zo_lerp(C.COLOR_LERP_TOGGLE_SELECT_R_MIN, C.COLOR_LERP_TOGGLE_SELECT_R_MAX, progress)
+    control.label:SetColor(r, C.ALPHA_FULL, C.ALPHA_FULL, C.ALPHA_FULL)
+    r = zo_lerp(C.COLOR_LERP_TOGGLE_SELECT_R_BACKDROP_MIN, C.COLOR_LERP_TOGGLE_SELECT_R_BACKDROP_MAX, progress)
+    local g = zo_lerp(C.COLOR_LERP_TOGGLE_SELECT_G_MIN, C.COLOR_LERP_TOGGLE_SELECT_G_MAX, progress)
+    control.backdrop:SetColor(r, g, C.COLOR_LERP_TOGGLE_SELECT_B, C.ALPHA_FULL)
 end
 
 ---@param animation AnimationTimeline
@@ -104,30 +110,30 @@ end
 function MagicSorterDialogs.TabButtonHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local backdrop = control:GetNamedChild("Backdrop")
-    local color1 = zo_lerp(0.25, 0.5, progress)
-    local color2 = zo_lerp(0.5, 0.75, progress)
-    backdrop:SetColor(color2, color1, color2, 1)
-    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 1 + progress)
+    local color1 = zo_lerp(C.COLOR_LERP_TAB_BUTTON_HIGHLIGHT_MIN, C.COLOR_LERP_TAB_BUTTON_HIGHLIGHT_MID, progress)
+    local color2 = zo_lerp(C.COLOR_LERP_TAB_BUTTON_HIGHLIGHT_MID, C.COLOR_LERP_TAB_BUTTON_HIGHLIGHT_MAX, progress)
+    backdrop:SetColor(color2, color1, color2, C.ALPHA_FULL)
+    backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_TAB_BUTTON_HIGHLIGHT_MIN + C.RGB_WEIGHT_TAB_BUTTON_HIGHLIGHT_MAX * progress)
 end
 
 ---@param animation AnimationTimeline
 ---@param progress number
 function MagicSorterDialogs.OptionButtonHighlightAnimation_UpdateFunction(animation, progress)
     progress = ZO_EaseInCubic(progress)
-    local r = zo_lerp(0, 0, progress)
-    local g = zo_lerp(0, 1, progress)
-    local b = zo_lerp(0, 1, progress)
-    local c = zo_lerp(0.75, 1, progress)
-    local desat = zo_lerp(1, 0, progress)
-    local weight = zo_lerp(1, 2.25, progress)
+    local r = zo_lerp(C.COLOR_LERP_OPTION_BUTTON_R, C.COLOR_LERP_OPTION_BUTTON_R, progress)
+    local g = zo_lerp(C.COLOR_LERP_OPTION_BUTTON_G_MIN, C.COLOR_LERP_OPTION_BUTTON_G_MAX, progress)
+    local b = zo_lerp(C.COLOR_LERP_OPTION_BUTTON_B_MIN, C.COLOR_LERP_OPTION_BUTTON_B_MAX, progress)
+    local c = zo_lerp(C.COLOR_LERP_OPTION_BUTTON_ICON_MIN, C.COLOR_LERP_OPTION_BUTTON_ICON_MAX, progress)
+    local desat = zo_lerp(C.COLOR_LERP_OPTION_BUTTON_DESAT_MIN, C.COLOR_LERP_OPTION_BUTTON_DESAT_MAX, progress)
+    local weight = zo_lerp(C.RGB_WEIGHT_OPTION_BUTTON_HIGHLIGHT_MIN, C.RGB_WEIGHT_OPTION_BUTTON_HIGHLIGHT_MAX, progress)
 
     local control = animation:GetAnimatedControl()
     local backdropTexture = control:GetNamedChild("Backdrop")
     local iconTexture = control:GetNamedChild("Icon")
 
-    backdropTexture:SetColor(r, g, b, 1)
+    backdropTexture:SetColor(r, g, b, C.ALPHA_FULL)
     backdropTexture:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, weight)
-    iconTexture:SetColor(c, c, c, 1)
+    iconTexture:SetColor(c, c, c, C.ALPHA_FULL)
     iconTexture:SetDesaturation(desat)
 end
 
@@ -135,7 +141,7 @@ end
 ---@param progress number
 function MagicSorterDialogs.OptionButtonHoverAnimation_UpdateFunction(animation, progress)
     progress = ZO_EaseInCubic(progress)
-    animation:GetAnimatedControl():GetNamedChild("Icon"):SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 1 + 0.5 * progress)
+    animation:GetAnimatedControl():GetNamedChild("Icon"):SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_OPTION_BUTTON_HOVER_MIN + C.RGB_WEIGHT_OPTION_BUTTON_HOVER_MAX * progress)
 end
 
 ---@param timeline AnimationTimeline
@@ -160,21 +166,21 @@ function MagicSorterDialogs.TopLevelBackdropAnimation_OnPlay(animation, complete
     texture1:SetBlendMode(TEX_BLEND_MODE_COLOR_DODGE)
     texture2:SetBlendMode(TEX_BLEND_MODE_COLOR_DODGE)
 
-    underlay1:SetVertexColors(1, 0.0, 1.0, 1.0, 1)
-    underlay1:SetVertexColors(2, 0.2, 0.8, 1.0, 1)
-    underlay1:SetVertexColors(4, 0.8, 0.2, 1.0, 1)
-    underlay1:SetVertexColors(8, 1.0, 0.2, 0.8, 1)
-    underlay1:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 1.8)
+    underlay1:SetVertexColors(C.VERTEX_INDEX_1, C.UNDERLAY1_COLOR_V1_R, C.UNDERLAY1_COLOR_V1_G, C.UNDERLAY1_COLOR_V1_B, C.ALPHA_FULL)
+    underlay1:SetVertexColors(C.VERTEX_INDEX_2, C.UNDERLAY1_COLOR_V2_R, C.UNDERLAY1_COLOR_V2_G, C.UNDERLAY1_COLOR_V2_B, C.ALPHA_FULL)
+    underlay1:SetVertexColors(C.VERTEX_INDEX_4, C.UNDERLAY1_COLOR_V4_R, C.UNDERLAY1_COLOR_V4_G, C.UNDERLAY1_COLOR_V4_B, C.ALPHA_FULL)
+    underlay1:SetVertexColors(C.VERTEX_INDEX_8, C.UNDERLAY1_COLOR_V8_R, C.UNDERLAY1_COLOR_V8_G, C.UNDERLAY1_COLOR_V8_B, C.ALPHA_FULL)
+    underlay1:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_UNDERLAY1)
 
-    underlay2:SetVertexColors(8, 0.4, 1.0, 1.0, 0.5)
-    underlay2:SetVertexColors(4, 0.0, 0.8, 1.0, 0.5)
-    underlay2:SetVertexColors(2, 0.8, 0.4, 1.0, 0.5)
-    underlay2:SetVertexColors(1, 1.0, 0.0, 0.8, 0.5)
-    underlay2:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, 1.4)
+    underlay2:SetVertexColors(C.VERTEX_INDEX_8, C.UNDERLAY2_COLOR_V8_R, C.UNDERLAY2_COLOR_V8_G, C.UNDERLAY2_COLOR_V8_B, C.ALPHA_UNDERLAY2_VERTEX)
+    underlay2:SetVertexColors(C.VERTEX_INDEX_4, C.UNDERLAY2_COLOR_V4_R, C.UNDERLAY2_COLOR_V4_G, C.UNDERLAY2_COLOR_V4_B, C.ALPHA_UNDERLAY2_VERTEX)
+    underlay2:SetVertexColors(C.VERTEX_INDEX_2, C.UNDERLAY2_COLOR_V2_R, C.UNDERLAY2_COLOR_V2_G, C.UNDERLAY2_COLOR_V2_B, C.ALPHA_UNDERLAY2_VERTEX)
+    underlay2:SetVertexColors(C.VERTEX_INDEX_1, C.UNDERLAY2_COLOR_V1_R, C.UNDERLAY2_COLOR_V1_G, C.UNDERLAY2_COLOR_V1_B, C.ALPHA_UNDERLAY2_VERTEX)
+    underlay2:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_UNDERLAY2)
 
-    texture0:SetAlpha(0)
-    texture1:SetAlpha(0)
-    texture2:SetAlpha(0)
+    texture0:SetAlpha(C.ALPHA_NONE)
+    texture1:SetAlpha(C.ALPHA_NONE)
+    texture2:SetAlpha(C.ALPHA_NONE)
 end
 
 ---@param animation AnimationTimeline
@@ -197,14 +203,14 @@ function MagicSorterDialogs.TopLevelBackdropAnimation_UpdateFunction(animation, 
         MAGIC_SORTER:RotateTexture(underlay1, angleu)
         MAGIC_SORTER:RotateTexture(underlay2, PI2 - angleu)
 
-        local alphau = 0.5 * (1 + zo_sin(PI2 * 6 * progress))
-        underlay1:SetAlpha(0.5 + 0.3 * alphau)
-        underlay2:SetAlpha(0.5 + 0.3 * (1 - alphau))
+        local alphau = C.ALPHA_UNDERLAY_BASE * (C.ALPHA_FULL + zo_sin(PI2 * C.BACKDROP_ANIMATION_FREQUENCY * progress))
+        underlay1:SetAlpha(C.ALPHA_UNDERLAY_BASE + C.ALPHA_UNDERLAY_RANGE * alphau)
+        underlay2:SetAlpha(C.ALPHA_UNDERLAY_BASE + C.ALPHA_UNDERLAY_RANGE * (C.ALPHA_FULL - alphau))
 
-        progress = (11 * progress) % 1
+        progress = (C.BACKDROP_ANIMATION_PROGRESS_MULTIPLIER * progress) % C.ALPHA_FULL
         local interval0 = progress
-        local interval1 = (progress + 0.18) % 1
-        local interval2 = (progress + 0.30) % 1
+        local interval1 = (progress + C.BACKDROP_ANIMATION_INTERVAL_OFFSET_1) % C.ALPHA_FULL
+        local interval2 = (progress + C.BACKDROP_ANIMATION_INTERVAL_OFFSET_2) % C.ALPHA_FULL
 
         local angle0 = PI2 * interval0
         local angle1 = PI2 * -interval1
@@ -214,26 +220,26 @@ function MagicSorterDialogs.TopLevelBackdropAnimation_UpdateFunction(animation, 
         local loop1 = zo_sin(PI * interval1)
         local loop2 = zo_sin(PI * interval2)
 
-        local scale0 = 0.6 + 3 * (1 - interval0)
-        local scale1 = 0.6 + 3 * (1 - interval1)
-        local scale2 = 0.6 + 3 * (1 - interval2)
+        local scale0 = C.BACKDROP_ANIMATION_SCALE_MIN + C.BACKDROP_ANIMATION_SCALE_MAX * (C.ALPHA_FULL - interval0)
+        local scale1 = C.BACKDROP_ANIMATION_SCALE_MIN + C.BACKDROP_ANIMATION_SCALE_MAX * (C.ALPHA_FULL - interval1)
+        local scale2 = C.BACKDROP_ANIMATION_SCALE_MIN + C.BACKDROP_ANIMATION_SCALE_MAX * (C.ALPHA_FULL - interval2)
 
         MAGIC_SORTER:RotateTexture(texture0, angle0, 0.5, 0.5, scale0, scale0)
         MAGIC_SORTER:RotateTexture(texture1, angle1, 0.5, 0.5, scale1, scale1)
         MAGIC_SORTER:RotateTexture(texture2, angle2, 0.5, 0.5, scale2, scale2)
 
-        texture0:SetVertexColors(2 + 4, 0.4, 0.8, 1, 0.2 * zo_min(1, 1.5 * loop0))
-        texture0:SetVertexColors(1 + 8, 0.2, 1, 1, 0.2 * zo_min(1, 2 * loop0))
+        texture0:SetVertexColors(C.VERTEX_INDEX_2_PLUS_4, C.RING0_COLOR_V6_R, C.RING0_COLOR_V6_G, C.RING0_COLOR_V6_B, C.BACKDROP_ANIMATION_ALPHA_MULTIPLIER * zo_min(C.ALPHA_FULL, C.RING0_MULTIPLIER_1 * loop0))
+        texture0:SetVertexColors(C.VERTEX_INDEX_1_PLUS_8, C.RING0_COLOR_V9_R, C.RING0_COLOR_V9_G, C.RING0_COLOR_V9_B, C.BACKDROP_ANIMATION_ALPHA_MULTIPLIER * zo_min(C.ALPHA_FULL, C.RING0_MULTIPLIER_2 * loop0))
 
-        texture1:SetVertexColors(2 + 4, 0.8, 0.2, 1, 0.2 * zo_min(1, 2 * loop1))
-        texture1:SetVertexColors(1 + 8, 1, 0.2, 0.8, 0.2 * zo_min(1, 1.6 * loop1))
+        texture1:SetVertexColors(C.VERTEX_INDEX_2_PLUS_4, C.RING1_COLOR_V6_R, C.RING1_COLOR_V6_G, C.RING1_COLOR_V6_B, C.BACKDROP_ANIMATION_ALPHA_MULTIPLIER * zo_min(C.ALPHA_FULL, C.RING1_MULTIPLIER_1 * loop1))
+        texture1:SetVertexColors(C.VERTEX_INDEX_1_PLUS_8, C.RING1_COLOR_V9_R, C.RING1_COLOR_V9_G, C.RING1_COLOR_V9_B, C.BACKDROP_ANIMATION_ALPHA_MULTIPLIER * zo_min(C.ALPHA_FULL, C.RING1_MULTIPLIER_2 * loop1))
 
-        texture2:SetVertexColors(1 + 4, 0.4, 0.1, 0.8, 0.2 * zo_min(1, 1.8 * loop2))
-        texture2:SetVertexColors(2 + 8, 0.6, 0.1, 1, 0.2 * zo_min(1, 1.7 * loop2))
+        texture2:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.RING2_COLOR_V5_R, C.RING2_COLOR_V5_G, C.RING2_COLOR_V5_B, C.BACKDROP_ANIMATION_ALPHA_MULTIPLIER * zo_min(C.ALPHA_FULL, C.RING2_MULTIPLIER_1 * loop2))
+        texture2:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.RING2_COLOR_V10_R, C.RING2_COLOR_V10_G, C.RING2_COLOR_V10_B, C.BACKDROP_ANIMATION_ALPHA_MULTIPLIER * zo_min(C.ALPHA_FULL, C.RING2_MULTIPLIER_2 * loop2))
 
-        texture0:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, loop0 * 12)
-        texture1:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, loop1 * 12)
-        texture2:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, loop2 * 12)
+        texture0:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, loop0 * C.RGB_WEIGHT_RING_MAX)
+        texture1:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, loop1 * C.RGB_WEIGHT_RING_MAX)
+        texture2:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, loop2 * C.RGB_WEIGHT_RING_MAX)
     end
 end
 
@@ -245,7 +251,8 @@ function MagicSorterDialogs.DataRow_OnInitialized(control)
     control.label3 = control:GetNamedChild("Label3")
     control.label4 = control:GetNamedChild("Label4")
     control.SetupRow = function (self, rowWidth, rowHeight, columnWidths)
-        rowWidth, rowHeight = rowWidth or 800, rowHeight or 28
+        rowWidth = rowWidth or C.DATA_ROW_DEFAULT_WIDTH
+        rowHeight = rowHeight or C.DATA_ROW_DEFAULT_HEIGHT
         self:SetDimensions(rowWidth, rowHeight)
         self.label1:SetText("")
         self.label2:SetText("")
@@ -253,10 +260,10 @@ function MagicSorterDialogs.DataRow_OnInitialized(control)
         self.label4:SetText("")
         if columnWidths then
             local numColumns = #columnWidths
-            self.label1:SetHidden(1 > numColumns)
-            self.label2:SetHidden(2 > numColumns)
+            self.label1:SetHidden(C.VERTEX_INDEX_1 > numColumns)
+            self.label2:SetHidden(C.VERTEX_INDEX_2 > numColumns)
             self.label3:SetHidden(3 > numColumns)
-            self.label4:SetHidden(4 > numColumns)
+            self.label4:SetHidden(C.VERTEX_INDEX_4 > numColumns)
             if tonumber(columnWidths[1]) then self.label1:SetDimensions(columnWidths[1], rowHeight) end
             if tonumber(columnWidths[2]) then self.label2:SetDimensions(columnWidths[2], rowHeight) end
             if tonumber(columnWidths[3]) then self.label3:SetDimensions(columnWidths[3], rowHeight) end
@@ -280,23 +287,23 @@ end
 
 ---@param control TextureControl
 function MagicSorterDialogs.LabelBackdrop_OnInitialized(control)
-    control:SetVertexColors(1, 0, 1, 1, 0)
-    control:SetVertexColors(2, 1, 0, 1, 1)
-    control:SetVertexColors(4, 0, 1, 1, 1)
-    control:SetVertexColors(8, 1, 0, 1, 0)
+    control:SetVertexColors(C.VERTEX_INDEX_1, C.LABEL_BACKDROP_COLOR_V1_R, C.LABEL_BACKDROP_COLOR_V1_G, C.LABEL_BACKDROP_COLOR_V1_B, C.ALPHA_NONE)
+    control:SetVertexColors(C.VERTEX_INDEX_2, C.LABEL_BACKDROP_COLOR_V2_R, C.LABEL_BACKDROP_COLOR_V2_G, C.LABEL_BACKDROP_COLOR_V2_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_4, C.LABEL_BACKDROP_COLOR_V4_R, C.LABEL_BACKDROP_COLOR_V4_G, C.LABEL_BACKDROP_COLOR_V4_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_8, C.LABEL_BACKDROP_COLOR_V8_R, C.LABEL_BACKDROP_COLOR_V8_G, C.LABEL_BACKDROP_COLOR_V8_B, C.ALPHA_NONE)
 end
 
 ---@param control TextureControl
 function MagicSorterDialogs.LabelBackdrop_OnTextureLoaded(control)
-    control:SetVertexColors(1, 0, 1, 1, 0)
-    control:SetVertexColors(2, 1, 0, 1, 1)
-    control:SetVertexColors(4, 0, 1, 1, 1)
-    control:SetVertexColors(8, 1, 0, 1, 0)
+    control:SetVertexColors(C.VERTEX_INDEX_1, C.LABEL_BACKDROP_COLOR_V1_R, C.LABEL_BACKDROP_COLOR_V1_G, C.LABEL_BACKDROP_COLOR_V1_B, C.ALPHA_NONE)
+    control:SetVertexColors(C.VERTEX_INDEX_2, C.LABEL_BACKDROP_COLOR_V2_R, C.LABEL_BACKDROP_COLOR_V2_G, C.LABEL_BACKDROP_COLOR_V2_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_4, C.LABEL_BACKDROP_COLOR_V4_R, C.LABEL_BACKDROP_COLOR_V4_G, C.LABEL_BACKDROP_COLOR_V4_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_8, C.LABEL_BACKDROP_COLOR_V8_R, C.LABEL_BACKDROP_COLOR_V8_G, C.LABEL_BACKDROP_COLOR_V8_B, C.ALPHA_NONE)
 end
 
 ---@param control MagicSorter_Button
 function MagicSorterDialogs.Button_OnInitialized(control)
-    control.highlightAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_ButtonHighlightAnimation", control)
+    control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_ButtonHighlightAnimation", control)
 end
 
 ---@param control MagicSorter_Button
@@ -324,8 +331,8 @@ function MagicSorterDialogs.Toggle_OnInitialized(control)
     control.isSelected = false
     control.backdrop = control:GetNamedChild("Backdrop")
     control.label = control:GetNamedChild("Label")
-    control.highlightAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_ToggleHoverAnimation", control)
-    control.toggleAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_ToggleSelectAnimation", control)
+    control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_ToggleHoverAnimation", control)
+    control.toggleAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_ToggleSelectAnimation", control)
     control.IsSelected = function (self)
         return self.isSelected == true
     end
@@ -377,14 +384,14 @@ function MagicSorterDialogs.TabButton_OnInitialized(control)
     control.active = false
     control.backdrop = control:GetNamedChild("Backdrop")
     control.label = control:GetNamedChild("Label")
-    control.highlightAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_TabButtonHighlightAnimation", control)
+    control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TabButtonHighlightAnimation", control)
     control.SetInactive = function (self)
         self.active = false
-        self.label:SetColor(1, 1, 1, 1)
+        self.label:SetColor(C.TAB_BUTTON_INACTIVE_R, C.TAB_BUTTON_INACTIVE_G, C.TAB_BUTTON_INACTIVE_B, C.ALPHA_FULL)
     end
     control.SetActive = function (self)
         self.active = true
-        self.label:SetColor(0.4, 1, 1, 1)
+        self.label:SetColor(C.TAB_BUTTON_ACTIVE_R, C.TAB_BUTTON_ACTIVE_G, C.TAB_BUTTON_ACTIVE_B, C.ALPHA_FULL)
     end
 end
 
@@ -413,8 +420,8 @@ end
 
 ---@param control MagicSorter_OptionButton
 function MagicSorterDialogs.OptionButton_OnInitialized(control)
-    control.highlightAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_OptionButtonHighlightAnimation", control)
-    control.hoverAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_OptionButtonHoverAnimation", control)
+    control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_OptionButtonHighlightAnimation", control)
+    control.hoverAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_OptionButtonHoverAnimation", control)
     control.backdropInset = control:GetNamedChild("BackdropInset")
     control.icon = control:GetNamedChild("Icon")
     control.label = control:GetNamedChild("Label")
@@ -490,19 +497,19 @@ end
 
 ---@param control TextureControl
 function MagicSorterDialogs.RemovableItemBackdrop_OnInitialized(control)
-    control:SetVertexColors(2 + 8, 0.9, 0.9, 0.9, 1)
-    control:SetVertexColors(1 + 4, 0, 0.7, 0.8, 1)
+    control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
 ---@param control TextureControl
 function MagicSorterDialogs.RemovableItemBackdrop_OnTextureLoaded(control)
-    control:SetVertexColors(2 + 8, 0.9, 0.9, 0.9, 1)
-    control:SetVertexColors(1 + 4, 0, 0.7, 0.8, 1)
+    control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
 ---@param control TextureControl
 function MagicSorterDialogs.RemovableItemRemoveButton_OnInitialized(control)
-    control.highlightAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_RemoveButtonHighlightAnimation", control)
+    control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_RemoveButtonHighlightAnimation", control)
 end
 
 ---@param control TextureControl
@@ -523,8 +530,8 @@ end
 
 ---@param control TextureControl
 function MagicSorterDialogs.DropBoxTile_OnInitialized(control)
-    control:SetVertexColors(1 + 4, 0, 0, 0, 0.8)
-    control:SetVertexColors(2 + 8, 1, 1, 1, 0.8)
+    control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.DROPBOX_TILE_COLOR_V5_R, C.DROPBOX_TILE_COLOR_V5_G, C.DROPBOX_TILE_COLOR_V5_B, C.ALPHA_DROPBOX_TILE)
+    control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.DROPBOX_TILE_COLOR_V10_R, C.DROPBOX_TILE_COLOR_V10_G, C.DROPBOX_TILE_COLOR_V10_B, C.ALPHA_DROPBOX_TILE)
 end
 
 ---@param control TextureControl
@@ -555,14 +562,14 @@ end
 
 ---@param control LabelControl
 function MagicSorterDialogs.AssignThemesButton_OnMouseEnter(control)
-    control:SetColor(1, 1, 0.5, 1)
-    control:GetNamedChild("Backdrop"):SetColor(0.05, 0.05, 0.05, 1)
+    control:SetColor(C.ASSIGN_THEMES_BUTTON_HOVER_R, C.ASSIGN_THEMES_BUTTON_HOVER_G, C.ASSIGN_THEMES_BUTTON_HOVER_B, C.ALPHA_FULL)
+    control:GetNamedChild("Backdrop"):SetColor(C.ASSIGN_THEMES_BUTTON_BACKDROP_HOVER_R, C.ASSIGN_THEMES_BUTTON_BACKDROP_HOVER_G, C.ASSIGN_THEMES_BUTTON_BACKDROP_HOVER_B, C.ALPHA_FULL)
 end
 
 ---@param control LabelControl
 function MagicSorterDialogs.AssignThemesButton_OnMouseExit(control)
-    control:SetColor(1, 1, 1, 1)
-    control:GetNamedChild("Backdrop"):SetColor(0, 0, 0, 1)
+    control:SetColor(C.ASSIGN_THEMES_BUTTON_NORMAL_R, C.ASSIGN_THEMES_BUTTON_NORMAL_G, C.ASSIGN_THEMES_BUTTON_NORMAL_B, C.ALPHA_FULL)
+    control:GetNamedChild("Backdrop"):SetColor(C.ASSIGN_THEMES_BUTTON_BACKDROP_NORMAL_R, C.ASSIGN_THEMES_BUTTON_BACKDROP_NORMAL_G, C.ASSIGN_THEMES_BUTTON_BACKDROP_NORMAL_B, C.ALPHA_FULL)
 end
 
 ---@param control LabelControl
@@ -579,7 +586,7 @@ end
 
 ---@param control MagicSorter_DragTag
 function MagicSorterDialogs.DragTag_OnInitialized(control)
-    control.highlightAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_DragTagHighlightAnimation", control)
+    control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_DragTagHighlightAnimation", control)
 end
 
 ---@param control MagicSorter_DragTag
@@ -599,7 +606,7 @@ function MagicSorterDialogs.DragTag_OnMoveStop(control)
     zo_callLater(function ()
                      control:ClearAnchors()
                      control:SetAnchor(TOPLEFT, control:GetOwningWindow().categoryScrollContents, TOPLEFT, control.originalX, control.originalY)
-                 end, 100)
+                 end, C.DRAG_TAG_RESET_DELAY_MS)
 end
 
 ---@param control MagicSorter_DragTag
@@ -620,14 +627,14 @@ end
 
 ---@param control TextureControl
 function MagicSorterDialogs.DragTagLabelBackdrop_OnInitialized(control)
-    control:SetVertexColors(2 + 8, 0.9, 0.9, 0.9, 1)
-    control:SetVertexColors(1 + 4, 0, 0.7, 0.8, 1)
+    control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
 ---@param control TextureControl
 function MagicSorterDialogs.DragTagLabelBackdrop_OnTextureLoaded(control)
-    control:SetVertexColors(2 + 8, 0.9, 0.9, 0.9, 1)
-    control:SetVertexColors(1 + 4, 0, 0.7, 0.8, 1)
+    control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
 ---@param control MagicSorter_StatusDetailRow
@@ -648,36 +655,36 @@ function MagicSorterDialogs.StatusDetailRow_OnInitialized(control)
         self.houseStatus:SetText(status)
     end
     control.SetHeaderRow = function (self)
-        self:SetHeight(56)
-        self.backdrop:SetVertexColors(1 + 4, 0, 0.4, 0.4, 1.0)
-        self.backdrop:SetVertexColors(2 + 8, 0.2, 0.8, 0.8, 1.0)
-        self.houseName:SetColor(1, 1, 1, 1)
-        self.houseName:SetMaxLineCount(2)
-        self.houseCapacity:SetColor(1, 1, 1, 1)
-        self.houseCapacity:SetMaxLineCount(2)
-        self.houseStatus:SetColor(1, 1, 1, 1)
-        self.houseStatus:SetMaxLineCount(2)
+        self:SetHeight(C.STATUS_DETAIL_HEADER_HEIGHT)
+        self.backdrop:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.STATUS_DETAIL_HEADER_COLOR_V5_R, C.STATUS_DETAIL_HEADER_COLOR_V5_G, C.STATUS_DETAIL_HEADER_COLOR_V5_B, C.ALPHA_STATUS_DETAIL_HEADER)
+        self.backdrop:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.STATUS_DETAIL_HEADER_COLOR_V10_R, C.STATUS_DETAIL_HEADER_COLOR_V10_G, C.STATUS_DETAIL_HEADER_COLOR_V10_B, C.ALPHA_STATUS_DETAIL_HEADER)
+        self.houseName:SetColor(C.STATUS_DETAIL_HEADER_TEXT_R, C.STATUS_DETAIL_HEADER_TEXT_G, C.STATUS_DETAIL_HEADER_TEXT_B, C.ALPHA_FULL)
+        self.houseName:SetMaxLineCount(C.STATUS_DETAIL_HEADER_MAX_LINES)
+        self.houseCapacity:SetColor(C.STATUS_DETAIL_HEADER_TEXT_R, C.STATUS_DETAIL_HEADER_TEXT_G, C.STATUS_DETAIL_HEADER_TEXT_B, C.ALPHA_FULL)
+        self.houseCapacity:SetMaxLineCount(C.STATUS_DETAIL_HEADER_MAX_LINES)
+        self.houseStatus:SetColor(C.STATUS_DETAIL_HEADER_TEXT_R, C.STATUS_DETAIL_HEADER_TEXT_G, C.STATUS_DETAIL_HEADER_TEXT_B, C.ALPHA_FULL)
+        self.houseStatus:SetMaxLineCount(C.STATUS_DETAIL_HEADER_MAX_LINES)
     end
     control.SetComplete = function (self, complete)
         if self.houseId == GetCurrentZoneHouseId() then
-            self.backdrop:SetVertexColors(1 + 4, 0.2, 0.8, 0.8, 0.8)
-            self.backdrop:SetVertexColors(2 + 8, 0.8, 0.2, 0.8, 0.8)
-            self.houseName:SetColor(1, 1, 1, 1)
-            self.houseCapacity:SetColor(1, 1, 1, 1)
-            self.houseStatus:SetColor(1, 1, 1, 1)
+            self.backdrop:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.STATUS_DETAIL_ACTIVE_COLOR_V5_R, C.STATUS_DETAIL_ACTIVE_COLOR_V5_G, C.STATUS_DETAIL_ACTIVE_COLOR_V5_B, C.ALPHA_STATUS_DETAIL_ACTIVE)
+            self.backdrop:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.STATUS_DETAIL_ACTIVE_COLOR_V10_R, C.STATUS_DETAIL_ACTIVE_COLOR_V10_G, C.STATUS_DETAIL_ACTIVE_COLOR_V10_B, C.ALPHA_STATUS_DETAIL_ACTIVE)
+            self.houseName:SetColor(C.ALPHA_FULL, C.ALPHA_FULL, C.ALPHA_FULL, C.ALPHA_FULL)
+            self.houseCapacity:SetColor(C.ALPHA_FULL, C.ALPHA_FULL, C.ALPHA_FULL, C.ALPHA_FULL)
+            self.houseStatus:SetColor(C.ALPHA_FULL, C.ALPHA_FULL, C.ALPHA_FULL, C.ALPHA_FULL)
         else
             if complete then
-                self.backdrop:SetVertexColors(1 + 4, 0.0, 0.1, 0.1, 0.6)
-                self.backdrop:SetVertexColors(2 + 8, 0.1, 0.0, 0.1, 0.6)
-                self.houseName:SetColor(0.7, 0.7, 0.7, 1)
-                self.houseCapacity:SetColor(0.7, 0.7, 0.7, 1)
-                self.houseStatus:SetColor(0.7, 0.7, 0.7, 1)
+                self.backdrop:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.STATUS_DETAIL_COMPLETE_COLOR_V5_R, C.STATUS_DETAIL_COMPLETE_COLOR_V5_G, C.STATUS_DETAIL_COMPLETE_COLOR_V5_B, C.ALPHA_STATUS_DETAIL_COMPLETE)
+                self.backdrop:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.STATUS_DETAIL_COMPLETE_COLOR_V10_R, C.STATUS_DETAIL_COMPLETE_COLOR_V10_G, C.STATUS_DETAIL_COMPLETE_COLOR_V10_B, C.ALPHA_STATUS_DETAIL_COMPLETE)
+                self.houseName:SetColor(C.STATUS_DETAIL_COMPLETE_TEXT_R, C.STATUS_DETAIL_COMPLETE_TEXT_G, C.STATUS_DETAIL_COMPLETE_TEXT_B, C.ALPHA_FULL)
+                self.houseCapacity:SetColor(C.STATUS_DETAIL_COMPLETE_TEXT_R, C.STATUS_DETAIL_COMPLETE_TEXT_G, C.STATUS_DETAIL_COMPLETE_TEXT_B, C.ALPHA_FULL)
+                self.houseStatus:SetColor(C.STATUS_DETAIL_COMPLETE_TEXT_R, C.STATUS_DETAIL_COMPLETE_TEXT_G, C.STATUS_DETAIL_COMPLETE_TEXT_B, C.ALPHA_FULL)
             else
-                self.backdrop:SetVertexColors(1 + 4, 0.0, 0.4, 0.4, 0.6)
-                self.backdrop:SetVertexColors(2 + 8, 0.4, 0.0, 0.4, 0.6)
-                self.houseName:SetColor(1, 1, 1, 1)
-                self.houseCapacity:SetColor(1, 1, 1, 1)
-                self.houseStatus:SetColor(1, 1, 1, 1)
+                self.backdrop:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.STATUS_DETAIL_INCOMPLETE_COLOR_V5_R, C.STATUS_DETAIL_INCOMPLETE_COLOR_V5_G, C.STATUS_DETAIL_INCOMPLETE_COLOR_V5_B, C.ALPHA_STATUS_DETAIL_COMPLETE)
+                self.backdrop:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.STATUS_DETAIL_INCOMPLETE_COLOR_V10_R, C.STATUS_DETAIL_INCOMPLETE_COLOR_V10_G, C.STATUS_DETAIL_INCOMPLETE_COLOR_V10_B, C.ALPHA_STATUS_DETAIL_COMPLETE)
+                self.houseName:SetColor(C.STATUS_DETAIL_INCOMPLETE_TEXT_R, C.STATUS_DETAIL_INCOMPLETE_TEXT_G, C.STATUS_DETAIL_INCOMPLETE_TEXT_B, C.ALPHA_FULL)
+                self.houseCapacity:SetColor(C.STATUS_DETAIL_INCOMPLETE_TEXT_R, C.STATUS_DETAIL_INCOMPLETE_TEXT_G, C.STATUS_DETAIL_INCOMPLETE_TEXT_B, C.ALPHA_FULL)
+                self.houseStatus:SetColor(C.STATUS_DETAIL_INCOMPLETE_TEXT_R, C.STATUS_DETAIL_INCOMPLETE_TEXT_G, C.STATUS_DETAIL_INCOMPLETE_TEXT_B, C.ALPHA_FULL)
             end
         end
     end
@@ -704,18 +711,20 @@ end
 
 ---@param control MagicSorter_TopLevelStandardLogoFooter
 function MagicSorterDialogs.LogoFooter_OnInitialized(control)
-    local height1, height2, height3 = 52 / 256, 138 / 256, 220 / 256
+    local height1 = C.LOGO_TEXTURE_HEIGHT_1
+    local height2 = C.LOGO_TEXTURE_HEIGHT_2
+    local height3 = C.LOGO_TEXTURE_HEIGHT_3
     control.logo = control:GetNamedChild("Logo")
     control.logo1 = control:GetNamedChild("Logo1")
     control.logo2 = control:GetNamedChild("Logo2")
     control.logo3 = control:GetNamedChild("Logo3")
-    control.logo:SetVertexColors(1 + 4, 0, 1, 1, 1)
-    control.logo:SetVertexColors(2 + 8, 1, 0, 1, 1)
-    control.logo:SetTextureCoords(0, 1, height2 - height1, height2)
-    control.logo1:SetTextureCoords(0, 1, 0, height1)
-    control.logo2:SetTextureCoords(0, 1, height2 - height1, height2)
-    control.logo3:SetTextureCoords(0, 1, height3 - height1, height3)
-    control.backdropAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_LogoAnimation", control)
+    control.logo:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.LOGO_FOOTER_COLOR_V5_R, C.LOGO_FOOTER_COLOR_V5_G, C.LOGO_FOOTER_COLOR_V5_B, C.ALPHA_FULL)
+    control.logo:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.LOGO_FOOTER_COLOR_V10_R, C.LOGO_FOOTER_COLOR_V10_G, C.LOGO_FOOTER_COLOR_V10_B, C.ALPHA_FULL)
+    control.logo:SetTextureCoords(0, C.ALPHA_FULL, height2 - height1, height2)
+    control.logo1:SetTextureCoords(0, C.ALPHA_FULL, C.ALPHA_NONE, height1)
+    control.logo2:SetTextureCoords(0, C.ALPHA_FULL, height2 - height1, height2)
+    control.logo3:SetTextureCoords(0, C.ALPHA_FULL, height3 - height1, height3)
+    control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_LogoAnimation", control)
 end
 
 ---@param control MagicSorter_TopLevelStandardLogoFooter
@@ -736,8 +745,8 @@ end
 
 ---@param control Control
 function MagicSorterDialogs.Logo_OnTextureLoaded(control)
-    control:SetVertexColors(1 + 4, 0, 1, 1, 1)
-    control:SetVertexColors(2 + 8, 1, 0, 1, 1)
+    control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.LOGO_FOOTER_COLOR_V5_R, C.LOGO_FOOTER_COLOR_V5_G, C.LOGO_FOOTER_COLOR_V5_B, C.ALPHA_FULL)
+    control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.LOGO_FOOTER_COLOR_V10_R, C.LOGO_FOOTER_COLOR_V10_G, C.LOGO_FOOTER_COLOR_V10_B, C.ALPHA_FULL)
 end
 
 ---@param control MagicSorter_TopLevelMovable
@@ -760,19 +769,20 @@ function MagicSorterDialogs.HouseSelection_OnInitialized(control)
     end
     control.GetNumColumns = function ()
         local width = control.scrollPanel:GetWidth()
-        local columns = zo_max(1, zo_floor((width - 10) / 160))
+        local columns = zo_max(C.VERTEX_INDEX_1, zo_floor((width - C.HOUSE_SELECTION_PADDING) / C.HOUSE_SELECTION_BUTTON_SIZE))
         return columns
     end
     control.GetOptionButtonPosition = function (self, optionIndex)
         local columns = self:GetNumColumns()
-        local x, y = 10 + ((optionIndex - 1) % columns) * 160, 10 + zo_floor((optionIndex - 1) / columns) * 160
+        local x = C.HOUSE_SELECTION_PADDING + ((optionIndex - C.VERTEX_INDEX_1) % columns) * C.HOUSE_SELECTION_BUTTON_SIZE
+        local y = C.HOUSE_SELECTION_PADDING + zo_floor((optionIndex - C.VERTEX_INDEX_1) / columns) * C.HOUSE_SELECTION_BUTTON_SIZE
         return x, y
     end
     control.CreateOptionButton = function ()
-        local optionIndex = #control.optionButtons + 1
+        local optionIndex = #control.optionButtons + C.VERTEX_INDEX_1
         local x, y = control:GetOptionButtonPosition(optionIndex)
-        local optionButton = CreateControlFromVirtual("HouseOptionButton", control.scrollContents, "MagicSorter_OptionButton", optionIndex)
-        optionButton:SetDimensions(152, 152)
+        local optionButton = windowManager:CreateControlFromVirtual("HouseOptionButton", control.scrollContents, "MagicSorter_OptionButton", optionIndex)
+        optionButton:SetDimensions(C.HOUSE_SELECTION_BUTTON_WIDTH, C.HOUSE_SELECTION_BUTTON_HEIGHT)
         optionButton:SetAnchor(TOPLEFT, control.scrollContents, TOPLEFT, x, y)
         optionButton.onToggled = OnSelectionChanged
         control.optionButtons[optionIndex] = optionButton
@@ -802,24 +812,24 @@ function MagicSorterDialogs.HouseSelection_OnInitialized(control)
             local icon = optionButton:GetNamedChild("Icon")
             local label = optionButton:GetNamedChild("Label")
             icon:SetTexture(house.houseImage)
-            icon:SetTextureCoords(0.1, 0.5, 0, 0.7)
-            icon:SetDimensions(128, 102)
+            icon:SetTextureCoords(C.HOUSE_ICON_TEXTURE_COORDS_MIN_U, C.HOUSE_ICON_TEXTURE_COORDS_MAX_U, C.HOUSE_ICON_TEXTURE_COORDS_MIN_V, C.HOUSE_ICON_TEXTURE_COORDS_MAX_V)
+            icon:SetDimensions(C.HOUSE_ICON_WIDTH, C.HOUSE_ICON_HEIGHT)
             label:SetText(house.houseName)
             if houseStats then
-                local lastUpdate = MAGIC_SORTER:GetInventoryManager():GetLastHouseUpdate(house.houseId) or 0
-                local unknown = lastUpdate == 0
+                local lastUpdate = MAGIC_SORTER:GetInventoryManager():GetLastHouseUpdate(house.houseId) or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                local unknown = lastUpdate == C.SCROLL_SLIDER_ZERO_THRESHOLD
                 local age = GetTimeStamp() - lastUpdate
-                local ageHours = zo_min(zo_floor(age / 60 / 60), 48)
-                local isOld = ageHours >= 24
-                local lowImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or 0
-                local lowImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or 0
-                local highImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or 0
-                local highImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or 0
+                local ageHours = zo_min(zo_floor(age / 60 / 60), C.HOUSE_STATS_AGE_HOURS_MAX)
+                local isOld = ageHours >= C.HOUSE_STATS_AGE_HOURS_THRESHOLD
+                local lowImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                local lowImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                local highImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                local highImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                 optionButton.overlayLabel:SetText(string.format("%d/%d%s", lowImpactUsed, lowImpactLimit, isOld and "*" or ""))
                 if isOld then
-                    optionButton.overlayLabel:SetColor(0.8, 0.8, 0.6, 1)
+                    optionButton.overlayLabel:SetColor(C.HOUSE_STATS_OLD_COLOR_R, C.HOUSE_STATS_OLD_COLOR_G, C.HOUSE_STATS_OLD_COLOR_B, C.ALPHA_FULL)
                 else
-                    optionButton.overlayLabel:SetColor(1, 1, 1, 1)
+                    optionButton.overlayLabel:SetColor(C.HOUSE_STATS_NORMAL_COLOR_R, C.HOUSE_STATS_NORMAL_COLOR_G, C.HOUSE_STATS_NORMAL_COLOR_B, C.ALPHA_FULL)
                 end
                 optionButton.overlay.tooltip = string.format("Furnishing Limit Usage\n%d of %d Traditional Used\n%d of %d Special Used%s", lowImpactUsed, lowImpactLimit, highImpactUsed, highImpactLimit, unknown and "\n\n* Current figures are unknown" or isOld and string.format("\n\n* Figures from %d+ hours ago", ageHours) or "")
                 optionButton.overlay:SetHidden(false)
@@ -832,13 +842,13 @@ function MagicSorterDialogs.HouseSelection_OnInitialized(control)
             optionButton:Refresh()
         end
         local numHouses = #houses
-        for index = numHouses + 1, #control.optionButtons do
+        for index = numHouses + C.VERTEX_INDEX_1, #control.optionButtons do
             control.optionButtons[index]:SetHidden(true)
             control.optionButtons[index].house = nil
         end
         local columns = control:GetNumColumns()
-        local maxY = zo_floor((numHouses - 1) / columns) * 160
-        control.scrollSlider:SetMinMax(0, maxY)
+        local maxY = zo_floor((numHouses - C.VERTEX_INDEX_1) / columns) * C.HOUSE_SELECTION_BUTTON_SIZE
+        control.scrollSlider:SetMinMax(C.SCROLL_SLIDER_MIN_VALUE, maxY)
         control:RefreshCount()
     end
     control.GetSelectedHouses = function ()
@@ -854,7 +864,7 @@ function MagicSorterDialogs.HouseSelection_OnInitialized(control)
         local houses = control:GetSelectedHouses()
         return MAGIC_SORTER:OnSubmitStorageHouses(houses)
     end
-    control.backdropAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
+    control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
         control.backdropAnimation:PlayFromStart()
     end
@@ -896,10 +906,10 @@ end
 function MagicSorterDialogs.HouseSelectionScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().scrollSlider
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 150))
+    slider:SetValue(value - (delta * C.HOUSE_SELECTION_SCROLL_MULTIPLIER))
 end
 
 ---@param control Control
@@ -910,7 +920,7 @@ end
 ---@param control SliderControl
 function MagicSorterDialogs.HouseSelectionScrollSlider_OnInitialized(control)
     control:GetOwningWindow().scrollSlider = control
-    control:SetValue(1)
+    control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
 ---@param control SliderControl
@@ -975,7 +985,7 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
         controlItem.poolKey = key
         controlItem.houseId = houseId
         controlItem.categoryId = categoryId
-        controlItem:SetDimensions(width or 300, height or 40)
+        controlItem:SetDimensions(width or C.CATEGORY_ASSIGNMENT_REMOVABLE_ITEM_WIDTH, height or C.CATEGORY_ASSIGNMENT_REMOVABLE_ITEM_HEIGHT)
         controlItem:ClearAnchors()
         controlItem:SetParent(parentControl)
         controlItem:SetSimpleAnchorParent(offsetX, offsetY)
@@ -984,9 +994,9 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
             MAGIC_SORTER:UnassignCategoryFromHouse(houseId, categoryId)
             topLevel:Refresh()
         end)
-        removeButton:SetDrawTier(DT_MEDIUM)
-        removeButton:SetDrawLayer(DL_TEXT)
-        removeButton:SetDrawLevel(10)
+        removeButton:SetDrawTier(C.CATEGORY_ASSIGNMENT_REMOVE_BUTTON_DRAW_TIER)
+        removeButton:SetDrawLayer(C.CATEGORY_ASSIGNMENT_REMOVE_BUTTON_DRAW_LAYER)
+        removeButton:SetDrawLevel(C.CATEGORY_ASSIGNMENT_REMOVE_BUTTON_DRAW_LEVEL)
         controlItem:GetNamedChild("Label"):SetText(categoryName)
         controlItem:SetHidden(false)
         return controlItem
@@ -994,7 +1004,7 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
     control.categoryTags = {}
     control.CreateCategoryTag = function (self, category)
         local categoryId = category.id
-        local categoryTag = CreateControlFromVirtual("CategoryTag", self.categoryScrollContents, "MagicSorter_DragTag", categoryId)
+        local categoryTag = windowManager:CreateControlFromVirtual("CategoryTag", self.categoryScrollContents, "MagicSorter_DragTag", categoryId)
         self.categoryTags[categoryId] = categoryTag
         categoryTag.category = category
         categoryTag:SetParent(self.categoryScrollContents)
@@ -1003,24 +1013,24 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
     end
     control.CreateHouseBox = function (self, house)
         local houseId = house.houseId
-        local houseBox = CreateControlFromVirtual("HouseBox", self.houseScrollContents, "MagicSorter_DropBox", houseId)
+        local houseBox = windowManager:CreateControlFromVirtual("HouseBox", self.houseScrollContents, "MagicSorter_DropBox", houseId)
         self.houseBoxes[houseId] = houseBox
         houseBox.house = house
         houseBox:SetParent(self.houseScrollContents)
-        houseBox:SetDimensions(400, 100)
+        houseBox:SetDimensions(C.CATEGORY_ASSIGNMENT_HOUSE_BOX_WIDTH, C.CATEGORY_ASSIGNMENT_HOUSE_BOX_HEIGHT)
         houseBox:GetNamedChild("Label"):SetText(house.houseName)
         houseBox:GetNamedChild("TileBackdrop"):SetTexture(house.houseImage)
-        houseBox:GetNamedChild("TileBackdrop"):SetTextureCoords(0, 0.68, 0.2, 0.45)
+        houseBox:GetNamedChild("TileBackdrop"):SetTextureCoords(C.CATEGORY_ASSIGNMENT_HOUSE_BOX_TILE_MIN_U, C.CATEGORY_ASSIGNMENT_HOUSE_BOX_TILE_MAX_U, C.CATEGORY_ASSIGNMENT_HOUSE_BOX_TILE_MIN_V, C.CATEGORY_ASSIGNMENT_HOUSE_BOX_TILE_MAX_V)
         return houseBox
     end
     control.RefreshScrollSlider = function ()
         local containerHeight = control.houseScrollPanel:GetHeight()
         local houseHeight = control.houseScrollContents:GetHeight()
         local houseViewHeight = houseHeight - containerHeight
-        control.houseScrollSlider:SetMinMax(0, zo_max(1, houseViewHeight))
+        control.houseScrollSlider:SetMinMax(C.SCROLL_SLIDER_MIN_VALUE, zo_max(C.SCROLL_SLIDER_ZERO_REPLACEMENT, houseViewHeight))
         local categoryHeight = control.categoryScrollContents:GetHeight()
         local categoryViewHeight = categoryHeight - containerHeight
-        control.categoryScrollSlider:SetMinMax(0, zo_max(1, categoryViewHeight))
+        control.categoryScrollSlider:SetMinMax(C.SCROLL_SLIDER_MIN_VALUE, zo_max(C.SCROLL_SLIDER_ZERO_REPLACEMENT, categoryViewHeight))
     end
     control.RefreshScrollContents = function ()
         local _, minY, _, maxY = control.houseScrollPanel:GetScreenRect()
@@ -1061,7 +1071,7 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
             table.insert(sortedBoxes, houseBox)
         end
         table.sort(sortedBoxes, function (boxA, boxB) return boxB.house.houseName > boxA.house.houseName end)
-        local houseY = 6
+        local houseY = C.CATEGORY_ASSIGNMENT_HOUSE_START_Y
         local tagY
         for houseIndex, houseBox in ipairs(sortedBoxes) do
             local houseId = houseBox.house.houseId
@@ -1069,24 +1079,24 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
             if activeHouses[houseId] then
                 local themes = houseBox.house.assignedThemeIds or {}
                 local themeCount = NonContiguousCount(themes)
-                local themeCountText = themeCount == 0 and "All" or tostring(themeCount)
+                local themeCountText = themeCount == C.SCROLL_SLIDER_ZERO_THRESHOLD and "All" or tostring(themeCount)
                 local houseStats = MAGIC_SORTER:GetInventoryManager():GetHouseStatistics(houseId)
                 if houseStats then
-                    local lastUpdate = MAGIC_SORTER:GetInventoryManager():GetLastHouseUpdate(houseId) or 0
-                    local unknown = lastUpdate == 0
+                    local lastUpdate = MAGIC_SORTER:GetInventoryManager():GetLastHouseUpdate(houseId) or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                    local unknown = lastUpdate == C.SCROLL_SLIDER_ZERO_THRESHOLD
                     local age = GetTimeStamp() - lastUpdate
-                    local ageHours = zo_min(zo_floor(age / 60 / 60), 48)
-                    local isOld = ageHours >= 24
-                    local lowImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or 0
-                    local lowImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or 0
-                    local highImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or 0
-                    local highImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or 0
+                    local ageHours = zo_min(zo_floor(age / 60 / 60), C.HOUSE_STATS_AGE_HOURS_MAX)
+                    local isOld = ageHours >= C.HOUSE_STATS_AGE_HOURS_THRESHOLD
+                    local lowImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                    local lowImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                    local highImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                    local highImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                     local limitText = string.format("%d/%d%s", lowImpactUsed, lowImpactLimit, isOld and "*" or "")
                     houseBox.overlayLabel:SetText(limitText)
                     if isOld then
-                        houseBox.overlayLabel:SetColor(0.8, 0.8, 0.6, 1)
+                        houseBox.overlayLabel:SetColor(C.HOUSE_STATS_OLD_COLOR_R, C.HOUSE_STATS_OLD_COLOR_G, C.HOUSE_STATS_OLD_COLOR_B, C.ALPHA_FULL)
                     else
-                        houseBox.overlayLabel:SetColor(1, 1, 1, 1)
+                        houseBox.overlayLabel:SetColor(C.HOUSE_STATS_NORMAL_COLOR_R, C.HOUSE_STATS_NORMAL_COLOR_G, C.HOUSE_STATS_NORMAL_COLOR_B, C.ALPHA_FULL)
                     end
                     local tooltipLimits = string.format("Furnishing Limit Usage\n%d of %d Traditional Used\n%d of %d Special Used%s", lowImpactUsed, lowImpactLimit, highImpactUsed, highImpactLimit, unknown and "\n\n* Current figures are unknown" or isOld and string.format("\n\n* Figures from %d+ hours ago", ageHours) or "")
                     local tooltipThemes
@@ -1107,35 +1117,35 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
                     houseBox.overlay:SetHidden(true)
                 end
                 houseBox:GetNamedChild("AssignThemes"):GetNamedChild("ThemeAssignments"):SetText(string.format("(%s assigned)", themeCountText))
-                local houseHeight = 112
-                houseBox:SetSimpleAnchorParent(0, houseY)
+                local houseHeight = C.CATEGORY_ASSIGNMENT_HOUSE_HEIGHT_BASE
+                houseBox:SetSimpleAnchorParent(C.SCROLL_SLIDER_ZERO_THRESHOLD, houseY)
                 tagY = houseHeight
                 local assignedCategories = MAGIC_SORTER:GetHouseCategoryAssignments(houseId)
                 local assignedParentCategories = {}
                 local assignedCategoryTable = {}
                 for _, category in ipairs(assignedCategories) do
                     table.insert(assignedCategoryTable, category)
-                    if category.parentId == 0 then
+                    if category.parentId == C.SCROLL_SLIDER_ZERO_THRESHOLD then
                         assignedParentCategories[category.id] = true
                     end
                 end
-                if #assignedCategoryTable ~= 0 then
+                if #assignedCategoryTable ~= C.SCROLL_SLIDER_ZERO_THRESHOLD then
                     table.sort(assignedCategoryTable, AssignedCategoryComparer)
                     for index, category in ipairs(assignedCategoryTable) do
                         if not assignedParentCategories[category.parentId] then
-                            control:CreateAssignedCategory(houseBox, houseId, category.id, category.displayName, 8, tagY, 360, 28)
-                            tagY = tagY + 32
-                            houseHeight = houseHeight + 32
+                            control:CreateAssignedCategory(houseBox, houseId, category.id, category.displayName, C.CATEGORY_ASSIGNMENT_CATEGORY_ITEM_OFFSET_X, tagY, C.CATEGORY_ASSIGNMENT_CATEGORY_ITEM_WIDTH, C.CATEGORY_ASSIGNMENT_CATEGORY_ITEM_HEIGHT)
+                            tagY = tagY + C.CATEGORY_ASSIGNMENT_CATEGORY_HEIGHT
+                            houseHeight = houseHeight + C.CATEGORY_ASSIGNMENT_CATEGORY_HEIGHT
                         end
                     end
                 end
-                houseHeight = houseHeight + 14
+                houseHeight = houseHeight + C.CATEGORY_ASSIGNMENT_HOUSE_PADDING
                 houseBox:SetHeight(houseHeight)
                 houseBox:SetHidden(false)
-                houseY = houseY + houseHeight + 10
+                houseY = houseY + houseHeight + C.CATEGORY_ASSIGNMENT_HOUSE_SPACING
             end
         end
-        control.houseScrollContents:SetDimensions(380, houseY)
+        control.houseScrollContents:SetDimensions(C.CATEGORY_ASSIGNMENT_SCROLL_CONTENTS_WIDTH, houseY)
 
         if not control.categoryTags then
             control.categoryTags = {}
@@ -1149,10 +1159,10 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
             local assignments = MAGIC_SORTER:GetCategoryHouseAssignments(categoryId)
             local numAssignments = #assignments
             local tooltip
-            categoryTag:GetNamedChild("AssignmentsLabel"):SetText(numAssignments == 0 and "" or string.format("%d house%s", numAssignments, 1 == numAssignments and "" or "s"))
-            if numAssignments > 0 then
+            categoryTag:GetNamedChild("AssignmentsLabel"):SetText(numAssignments == C.SCROLL_SLIDER_ZERO_THRESHOLD and "" or string.format("%d house%s", numAssignments, C.VERTEX_INDEX_1 == numAssignments and "" or "s"))
+            if numAssignments > C.SCROLL_SLIDER_ZERO_THRESHOLD then
                 table.sort(assignments, HouseNameComparer)
-                tooltip = string.format("Assigned House%s:|cffffff", numAssignments == 1 and "" or "s")
+                tooltip = string.format("Assigned House%s:|cffffff", numAssignments == C.VERTEX_INDEX_1 and "" or "s")
                 for index, house in ipairs(assignments) do
                     tooltip = string.format("%s\n%s", tooltip, house.houseName)
                 end
@@ -1164,29 +1174,29 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
             table.insert(sortedTags, categoryTag)
         end
         table.sort(sortedTags, function (tagA, tagB) return tagB.category.displayName > tagA.category.displayName end)
-        tagY = 4
+        tagY = C.CATEGORY_ASSIGNMENT_CATEGORY_START_Y
         for tagIndex, categoryTag in ipairs(sortedTags) do
             local offsetX, width
-            if categoryTag.category.parentId == 0 then
-                offsetX, width = 0, 350
+            if categoryTag.category.parentId == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+                offsetX, width = C.SCROLL_SLIDER_ZERO_THRESHOLD, C.CATEGORY_ASSIGNMENT_CATEGORY_PARENT_WIDTH
             else
-                offsetX, width = 22, 328
+                offsetX, width = C.CATEGORY_ASSIGNMENT_CATEGORY_CHILD_OFFSET_X, C.CATEGORY_ASSIGNMENT_CATEGORY_CHILD_WIDTH
             end
             categoryTag:ClearAnchors()
             categoryTag:SetAnchor(TOPLEFT, control.categoryScrollContents, TOPLEFT, offsetX, tagY)
-            categoryTag:SetDimensions(width, 32)
+            categoryTag:SetDimensions(width, C.CATEGORY_ASSIGNMENT_CATEGORY_HEIGHT)
             categoryTag.originalX = offsetX
             categoryTag.originalY = tagY
-            tagY = tagY + 36
+            tagY = tagY + C.CATEGORY_ASSIGNMENT_CATEGORY_SPACING
         end
-        control.categoryScrollContents:SetDimensions(380, tagY)
+        control.categoryScrollContents:SetDimensions(C.CATEGORY_ASSIGNMENT_SCROLL_CONTENTS_WIDTH, tagY)
 
         control:RefreshScrollSlider()
     end
     control.Submit = function ()
         return MAGIC_SORTER:OnSubmitCategoryAssignments()
     end
-    control.backdropAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
+    control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
         control.backdropAnimation:PlayFromStart()
     end
@@ -1228,10 +1238,10 @@ end
 function MagicSorterDialogs.CategoryScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().categoryScrollSlider
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 150))
+    slider:SetValue(value - (delta * C.CATEGORY_ASSIGNMENT_SCROLL_MULTIPLIER))
 end
 
 ---@param control Control
@@ -1242,7 +1252,7 @@ end
 ---@param control SliderControl
 function MagicSorterDialogs.CategoryScrollSlider_OnInitialized(control)
     control:GetOwningWindow().categoryScrollSlider = control
-    control:SetValue(1)
+    control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
 ---@param control SliderControl
@@ -1266,10 +1276,10 @@ end
 function MagicSorterDialogs.HouseScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().houseScrollSlider
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 150))
+    slider:SetValue(value - (delta * C.CATEGORY_ASSIGNMENT_SCROLL_MULTIPLIER))
 end
 
 ---@param control Control
@@ -1280,7 +1290,7 @@ end
 ---@param control SliderControl
 function MagicSorterDialogs.HouseScrollSlider_OnInitialized(control)
     control:GetOwningWindow().houseScrollSlider = control
-    control:SetValue(1)
+    control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
 ---@param control SliderControl
@@ -1317,7 +1327,8 @@ end
 -- Theme Assignment Dialog
 ---@param control MagicSorter_ThemeAssignment
 function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
-    local buttonWidth, buttonHeight = 120, 54
+    local buttonWidth = C.THEME_ASSIGNMENT_BUTTON_WIDTH
+    local buttonHeight = C.THEME_ASSIGNMENT_BUTTON_HEIGHT
     local topLevel = control
     control.subtitle = control:GetNamedChild("BodySubtitleLabel")
     control.optionButtons = {}
@@ -1335,19 +1346,20 @@ function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
     end
     control.GetNumColumns = function ()
         local width = control.scrollPanel:GetWidth()
-        local columns = zo_max(1, zo_floor((width - 10) / buttonWidth))
+        local columns = zo_max(C.VERTEX_INDEX_1, zo_floor((width - C.THEME_ASSIGNMENT_SCROLL_PADDING) / buttonWidth))
         return columns
     end
     control.GetOptionButtonPosition = function (self, optionIndex)
         local columns = self:GetNumColumns()
-        local x, y = 10 + ((optionIndex - 1) % columns) * buttonWidth, 10 + zo_floor((optionIndex - 1) / columns) * buttonHeight
+        local x = C.THEME_ASSIGNMENT_SCROLL_PADDING + ((optionIndex - C.VERTEX_INDEX_1) % columns) * buttonWidth
+        local y = C.THEME_ASSIGNMENT_SCROLL_PADDING + zo_floor((optionIndex - C.VERTEX_INDEX_1) / columns) * buttonHeight
         return x, y
     end
     control.CreateOptionButton = function ()
-        local optionIndex = #control.optionButtons + 1
-        local optionButton = CreateControlFromVirtual("ThemeOptionButton", control.scrollContents, "MagicSorter_Toggle", optionIndex)
+        local optionIndex = #control.optionButtons + C.VERTEX_INDEX_1
+        local optionButton = windowManager:CreateControlFromVirtual("ThemeOptionButton", control.scrollContents, "MagicSorter_Toggle", optionIndex)
         optionButton:ClearAnchors()
-        optionButton:SetDimensions(buttonWidth - 8, buttonHeight - 8)
+        optionButton:SetDimensions(buttonWidth - C.THEME_ASSIGNMENT_BUTTON_PADDING, buttonHeight - C.THEME_ASSIGNMENT_BUTTON_PADDING)
         optionButton.onToggled = OnSelectionChanged
         control.optionButtons[optionIndex] = optionButton
         local x, y = control:GetOptionButtonPosition(optionIndex)
@@ -1359,7 +1371,7 @@ function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
         local themes = house.assignedThemeIds
         local countString = "All"
         local count = NonContiguousCount(themes)
-        if themes and count > 0 then
+        if themes and count > C.SCROLL_SLIDER_ZERO_THRESHOLD then
             countString = tostring(count)
         end
         control.countLabel:SetText(string.format("%s selected", countString))
@@ -1368,9 +1380,9 @@ function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
         local themes = MAGIC_SORTER:GetSortManager().FurnitureThemeList
         local house = control:GetHouse()
         local assigned = house.assignedThemeIds
-        local allSelected = NonContiguousCount(assigned) == 0
+        local allSelected = NonContiguousCount(assigned) == C.SCROLL_SLIDER_ZERO_THRESHOLD
         control.subtitle:SetText(house.houseName)
-        if #control.optionButtons == 0 then
+        if #control.optionButtons == C.SCROLL_SLIDER_ZERO_THRESHOLD then
             for _, theme in ipairs(themes) do
                 local optionButton = control:CreateOptionButton()
                 optionButton.theme = theme
@@ -1381,7 +1393,7 @@ function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
         for _, optionButton in ipairs(control.optionButtons) do
             local theme = optionButton.theme
             local selected
-            if theme.id == 0 then
+            if theme.id == C.SCROLL_SLIDER_ZERO_THRESHOLD then
                 selected = allSelected
             else
                 selected = true == assigned[theme.id] and not allSelected
@@ -1390,14 +1402,14 @@ function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
         end
         local columns = control:GetNumColumns()
         local maxY = zo_floor(#themes / columns) * buttonHeight
-        control.scrollSlider:SetMinMax(0, maxY)
+        control.scrollSlider:SetMinMax(C.SCROLL_SLIDER_MIN_VALUE, maxY)
         control:RefreshCount()
     end
     control.GetSelectedThemes = function ()
         local themes = {}
         for _, optionButton in ipairs(control.optionButtons) do
             if optionButton:IsSelected() then
-                if optionButton.theme.id == 0 then
+                if optionButton.theme.id == C.SCROLL_SLIDER_ZERO_THRESHOLD then
                     themes = {}
                     break
                 else
@@ -1432,7 +1444,7 @@ function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
         MAGIC_SORTER:OnSettingsChanged()
         return true
     end
-    control.backdropAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
+    control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
         control.backdropAnimation:PlayFromStart()
     end
@@ -1475,10 +1487,10 @@ end
 function MagicSorterDialogs.ThemeScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().scrollSlider
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 60))
+    slider:SetValue(value - (delta * C.THEME_ASSIGNMENT_SCROLL_MULTIPLIER))
 end
 
 ---@param control Control
@@ -1489,7 +1501,7 @@ end
 ---@param control SliderControl
 function MagicSorterDialogs.ThemeScrollSlider_OnInitialized(control)
     control:GetOwningWindow().scrollSlider = control
-    control:SetValue(1)
+    control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
 ---@param control SliderControl
@@ -1518,7 +1530,7 @@ end
 -- Disclaimer Dialog
 ---@param control MagicSorter_Disclaimer
 function MagicSorterDialogs.Disclaimer_OnInitialized(control)
-    control.backdropAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
+    control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
         control.backdropAnimation:PlayFromStart()
     end
@@ -1537,7 +1549,7 @@ function MagicSorterDialogs.Disclaimer_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
     end
-    zo_callLater(function () MAGIC_SORTER:SetUIMode(true) end, 300)
+    zo_callLater(function () MAGIC_SORTER:SetUIMode(true) end, C.DISCLAIMER_UI_MODE_DELAY_MS)
 end
 
 ---@param control MagicSorter_Disclaimer
@@ -1630,7 +1642,7 @@ function MagicSorterDialogs.StorageProgress_OnInitialized(control)
         control.statusLabel:SetText(control.message)
         control.suspendButtonLabel:SetText(control.isActive and "Suspend" or "Resume")
         control.activeWarning:SetHidden(not control.isActive)
-        EVENT_MANAGER:RegisterForUpdate(MAGIC_SORTER.EventDescriptor .. "RefreshStatusDetail", 2800, MagicSorter_StorageProgressDetail.RefreshStatusDetail)
+        eventManager:RegisterForUpdate(MAGIC_SORTER.EventDescriptor .. "RefreshStatusDetail", C.STORAGE_PROGRESS_REFRESH_INTERVAL_MS, MagicSorter_StorageProgressDetail.RefreshStatusDetail)
     end
     control.SetMessage = function (self, message)
         self.message = message
@@ -1644,8 +1656,8 @@ function MagicSorterDialogs.StorageProgress_OnInitialized(control)
         if isComplete then
             MAGIC_SORTER:SetDialogHidden("StorageProgress", true)
             MAGIC_SORTER:SetDialogHidden("Complete", false)
-            EVENT_MANAGER:RegisterForUpdate(MAGIC_SORTER.EventDescriptor .. "AutoReload", 60000, function ()
-                EVENT_MANAGER:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "AutoReload")
+            eventManager:RegisterForUpdate(MAGIC_SORTER.EventDescriptor .. "AutoReload", C.STORAGE_PROGRESS_AUTO_RELOAD_INTERVAL_MS, function ()
+                eventManager:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "AutoReload")
                 MAGIC_SORTER:GetData().showCompleteDialog = true
                 ReloadUI("ingame")
             end)
@@ -1659,7 +1671,7 @@ function MagicSorterDialogs.StorageProgress_OnInitialized(control)
             control.hideDetailsButton:SetHidden(control.detailsCollapsed)
         end
     end
-    control.backdropAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
+    control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
         control.backdropAnimation:PlayFromStart()
     end
@@ -1782,7 +1794,7 @@ function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
     headerRow:SetAnchor(TOPLEFT)
     headerRow:SetHidden(false)
     control.RefreshStatusDetail = function ()
-        EVENT_MANAGER:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "RefreshStatusDetail")
+        eventManager:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "RefreshStatusDetail")
         if control.detailPanel:IsHidden() then
             return
         end
@@ -1844,20 +1856,20 @@ function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
             previousRow = controlItem
             maxIndex = index
         end
-        local height = 4 + maxIndex * 30
-        control.detailScrollContents:SetDimensions(540, height)
-        control.detailScrollSlider:SetMinMax(0, height)
-        for index = maxIndex + 1, #control.statusDetailRows do
+        local height = C.STORAGE_PROGRESS_DETAIL_START_HEIGHT + maxIndex * C.STORAGE_PROGRESS_DETAIL_ROW_HEIGHT
+        control.detailScrollContents:SetDimensions(C.STORAGE_PROGRESS_DETAIL_SCROLL_CONTENTS_WIDTH, height)
+        control.detailScrollSlider:SetMinMax(C.SCROLL_SLIDER_MIN_VALUE, height)
+        for index = maxIndex + C.VERTEX_INDEX_1, #control.statusDetailRows do
             control.statusDetailRows[index]:SetHidden(true)
         end
         if currentHouseIndex and currentHouseIndex ~= control.previousHouseIndex then
-            control.detailScrollSlider:SetValue(zo_max(0, 30 * (currentHouseIndex - 2)))
+            control.detailScrollSlider:SetValue(zo_max(C.SCROLL_SLIDER_MIN_VALUE, C.STORAGE_PROGRESS_DETAIL_ROW_HEIGHT * (currentHouseIndex - C.VERTEX_INDEX_2)))
             control.previousHouseIndex = currentHouseIndex
         end
     end
     control.RefreshActionLog = function (self)
         local actions = MAGIC_SORTER:GetSortManager():GetActionLog()
-        if actions and #actions ~= 0 then
+        if actions and #actions ~= C.SCROLL_SLIDER_ZERO_THRESHOLD then
             local slider = self.actionLogScrollSlider
             local panel = self:GetNamedChild("LogScrollContainerLogScrollPanel")
             local logContainer = self:GetNamedChild("LogScrollContainerLogScrollPanelLogScrollContents")
@@ -1865,11 +1877,11 @@ function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
             logControl:SetText(table.concat(actions, "\n"))
             zo_callLater(function ()
                              local height = logControl:GetTextHeight()
-                             logContainer:SetDimensions(520, height)
+                             logContainer:SetDimensions(C.ACTION_LOG_SCROLL_CONTENTS_WIDTH, height)
                              height = height - panel:GetHeight()
-                             height = zo_max(0, height)
-                             slider:SetMinMax(0, height)
-                         end, 100)
+                             height = zo_max(C.SCROLL_SLIDER_MIN_VALUE, height)
+                             slider:SetMinMax(C.SCROLL_SLIDER_MIN_VALUE, height)
+                         end, C.ACTION_LOG_REFRESH_DELAY_MS)
         end
     end
 end
@@ -1883,10 +1895,10 @@ end
 function MagicSorterDialogs.DetailScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("DetailScrollSlider")
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 60))
+    slider:SetValue(value - (delta * C.STORAGE_PROGRESS_DETAIL_SCROLL_MULTIPLIER))
 end
 
 ---@param control SliderControl
@@ -1905,10 +1917,10 @@ end
 function MagicSorterDialogs.LogScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("LogScrollSlider")
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 60))
+    slider:SetValue(value - (delta * C.STORAGE_PROGRESS_DETAIL_SCROLL_MULTIPLIER))
 end
 
 ---@param control SliderControl
@@ -1921,7 +1933,7 @@ end
 -- Complete Dialog
 ---@param control MagicSorter_Complete
 function MagicSorterDialogs.Complete_OnInitialized(control)
-    control.backdropAnimation = ANIMATION_MANAGER:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
+    control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
         control.backdropAnimation:PlayFromStart()
     end
@@ -1935,10 +1947,10 @@ function MagicSorterDialogs.Complete_OnInitialized(control)
         controlItem:SetText(reportText)
         zo_callLater(function ()
                          local height = controlItem:GetTextHeight()
-                         container:SetDimensions(665, height)
-                         height = zo_max(0, height - panel:GetHeight())
-                         slider:SetMinMax(0, height)
-                     end, 400)
+                         container:SetDimensions(C.COMPLETE_DIALOG_SCROLL_CONTENTS_WIDTH, height)
+                         height = zo_max(C.SCROLL_SLIDER_MIN_VALUE, height - panel:GetHeight())
+                         slider:SetMinMax(C.SCROLL_SLIDER_MIN_VALUE, height)
+                     end, C.COMPLETE_DIALOG_REFRESH_DELAY_MS)
     end
 end
 
@@ -1968,10 +1980,10 @@ end
 function MagicSorterDialogs.CompleteScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("ScrollSlider")
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 60))
+    slider:SetValue(value - (delta * C.COMPLETE_DIALOG_SCROLL_MULTIPLIER))
 end
 
 ---@param control SliderControl
@@ -1988,7 +2000,7 @@ end
 ---@param shift boolean
 ---@param command boolean
 function MagicSorterDialogs.CompleteCloseButton_OnMouseDown(control, button, ctrl, alt, shift, command)
-    EVENT_MANAGER:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "AutoReload")
+    eventManager:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "AutoReload")
     MAGIC_SORTER:SetDialogHidden("Complete", true)
     MAGIC_SORTER:GetData().showCompleteDialog = false
 end
@@ -1999,8 +2011,8 @@ function MagicSorterDialogs.ReportSummary_OnInitialized(control)
     control.panel = control:GetNamedChild("ScrollContainerScrollPanel")
     control.slider = control:GetNamedChild("ScrollContainerScrollSlider")
     control.message = control.panel:GetNamedChild("ScrollContentsMessage")
-    control.visibleHeight = 300
-    control:SetDimensions(360, control.visibleHeight)
+    control.visibleHeight = C.REPORT_SUMMARY_VISIBLE_HEIGHT
+    control:SetDimensions(C.REPORT_SUMMARY_WIDTH, control.visibleHeight)
     control.hideShowButton = control:GetNamedChild("HideShowButton")
     control.hideShowButton.nextState = "hide"
 end
@@ -2014,10 +2026,10 @@ end
 function MagicSorterDialogs.ReportSummaryScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("ScrollSlider")
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 60))
+    slider:SetValue(value - (delta * C.REPORT_SUMMARY_SCROLL_MULTIPLIER))
 end
 
 ---@param control SliderControl
@@ -2058,11 +2070,11 @@ function MagicSorterDialogs.ReportInventory_OnInitialized(control)
     control.panel = control:GetNamedChild("ScrollContainerScrollPanel")
     control.slider = control:GetNamedChild("ScrollContainerScrollSlider")
     control.contents = control.panel:GetNamedChild("ScrollContents")
-    control.visibleHeight = 600
-    control:SetDimensions(800, control.visibleHeight)
+    control.visibleHeight = C.REPORT_INVENTORY_VISIBLE_HEIGHT
+    control:SetDimensions(C.REPORT_INVENTORY_WIDTH, control.visibleHeight)
     control.rowControlPool = ZO_ControlPool:New("MagicSorter_DataRow", control.contents)
     control.ShowReport = function (self, caption, rows)
-        local columns = { 180, 180, 180, 180 }
+        local columns = { C.REPORT_INVENTORY_COLUMN_WIDTH, C.REPORT_INVENTORY_COLUMN_WIDTH, C.REPORT_INVENTORY_COLUMN_WIDTH, C.REPORT_INVENTORY_COLUMN_WIDTH }
         self.caption:SetText(caption or "Report")
         self.rowControlPool:ReleaseAllObjects()
         if "table" == type(rows) then
@@ -2094,10 +2106,10 @@ end
 function MagicSorterDialogs.ReportInventoryScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("ScrollSlider")
     local value = slider:GetValue()
-    if value == 0 then
-        value = 1
+    if value == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+        value = C.SCROLL_SLIDER_ZERO_REPLACEMENT
     end
-    slider:SetValue(value - (delta * 60))
+    slider:SetValue(value - (delta * C.REPORT_INVENTORY_SCROLL_MULTIPLIER))
 end
 
 ---@param control SliderControl
