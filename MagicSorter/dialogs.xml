@@ -2202,16 +2202,16 @@
                     <Label name="$(parent)Message"
                            color="ffffff"
                            font="$(GAMEPAD_MEDIUM_FONT)|$(GP_25)|soft-shadow-thick"
-                           horizontalAlignment="LEFT"
+                           horizontalAlignment="CENTER"
                            verticalAlignment="TOP"
                            maxLineCount="1100"
                            text=""
                            tier="NORMAL"
                            layer="CONTROLS"
                            level="1">
-                      <Anchor point="TOPLEFT"
+                      <Anchor point="TOP"
                               relativeTo="$(parent)ScrollPanel"
-                              relativePoint="TOPLEFT" />
+                              relativePoint="TOP" />
                     </Label>
                   </Controls>
                 </Control>

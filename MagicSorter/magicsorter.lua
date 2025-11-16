@@ -55,6 +55,9 @@ function MSorter:InitializeStaticData()
         ["9_157"] = true, -- Gallery, Undaunted Trophies
         ["9_184"] = true, -- Gallery, ESO Plus
     }
+    -- Sentinel values for uncategorized furniture (items without valid category/subcategory)
+    self.FURNITURE_NEEDS_CATEGORIZATION_CATEGORY_ID = 0
+    self.FURNITURE_NEEDS_CATEGORIZATION_SUBCATEGORY_ID = 0
 end
 
 function MSorter:CleanSavedVariables()
@@ -164,7 +167,7 @@ end
 
 function MSorter:RotateTexture(texture, angle, centerX, centerY, scaleX, scaleY)
     angle, centerX, centerY, scaleX, scaleY = angle or 0, centerX or 0.5, centerY or 0.5, scaleX or 1, scaleY or 1
-    local cosine, sine = math.cos(angle), math.sin(angle)
+    local cosine, sine = zo_cos(angle), zo_sin(angle)
     local x1, y1 = -0.5 * sine + -0.5 * cosine, -0.5 * cosine - -0.5 * sine
     local x2, y2 = -0.5 * sine + 0.5 * cosine, -0.5 * cosine - 0.5 * sine
     local x3, y3 = 0.5 * sine + -0.5 * cosine, 0.5 * cosine - -0.5 * sine
@@ -292,7 +295,7 @@ end
 function MSorter:UpdateReportSummaryLayout(message, container, slider, panel)
     local height = message:GetTextHeight()
     container:SetHeight(height)
-    slider:SetMinMax(0, math.max(0, height - panel:GetHeight()))
+    slider:SetMinMax(0, zo_max(0, height - panel:GetHeight()))
 end
 
 function MSorter:RefreshReportSummaryHiddenState()
@@ -548,6 +551,24 @@ function MSorter:OnSubmitCategoryAssignments()
 end
 
 function MSorter:AddFurnitureCategory(categoryId, parentCategoryId, parentCategoryName)
+    -- Handle "Needs Categorization" fake category
+    if categoryId == self.FURNITURE_NEEDS_CATEGORIZATION_CATEGORY_ID then
+        local category = self.furnitureCategories[categoryId]
+        if category then
+            return category
+        else
+            category = { 
+                id = categoryId, 
+                parentId = 0, 
+                name = "Needs Categorization", 
+                displayName = "Needs Categorization", 
+                assignedHouseIds = {} 
+            }
+            self.furnitureCategories[categoryId] = category
+            return category
+        end
+    end
+    
     -- Ignore the master "Furniture" category.
     if categoryId and categoryId ~= 0 and categoryId ~= 1 then
         local category = self.furnitureCategories[categoryId]
@@ -579,6 +600,9 @@ end
 function MSorter:GetFurnitureCategories()
     if not self.furnitureCategories then
         self.furnitureCategories = {}
+        -- Add "Needs Categorization" fake category first
+        self:AddFurnitureCategory(self.FURNITURE_NEEDS_CATEGORIZATION_CATEGORY_ID)
+        
         local numCategories = GetNumFurnitureCategories()
         for categoryIndex = 1, numCategories do
             local categoryId = GetFurnitureCategoryId(categoryIndex)
@@ -587,7 +611,7 @@ function MSorter:GetFurnitureCategories()
                 if category then
                     local parentCategoryId = category.id
                     local categoryName = category.name
-                    local numSubcategories = GetNumFurnitureSubcategories(parentCategoryId)
+                    local numSubcategories = GetNumFurnitureSubcategories(categoryIndex)
                     for subcategoryIndex = 1, numSubcategories do
                         local subcategoryId = GetFurnitureSubcategoryId(categoryIndex, subcategoryIndex)
                         if self:IsValidFurnitureCategory(parentCategoryId, subcategoryId) then
@@ -677,9 +701,12 @@ function MSorter:AssignCategoryToHouse(houseId, category)
         house.assignedCategoryIds = {}
     end
     house.assignedCategoryIds[category.id] = true
-    local subcategories = self:GetFurnitureSubcategories(category.id)
-    for _, subcategory in pairs(subcategories) do
-        house.assignedCategoryIds[subcategory.id] = true
+    -- "Needs Categorization" is a special fake category with no real subcategories - don't auto-assign subcategories for it
+    if category.id ~= self.FURNITURE_NEEDS_CATEGORIZATION_CATEGORY_ID then
+        local subcategories = self:GetFurnitureSubcategories(category.id)
+        for _, subcategory in pairs(subcategories) do
+            house.assignedCategoryIds[subcategory.id] = true
+        end
     end
     self:OnSettingsChanged()
     return true
@@ -694,9 +721,12 @@ function MSorter:UnassignCategoryFromHouse(houseId, categoryId)
         house.assignedCategoryIds = {}
     end
     house.assignedCategoryIds[categoryId] = nil
-    local subcategories = self:GetFurnitureSubcategories(categoryId)
-    for _, subcategory in pairs(subcategories) do
-        house.assignedCategoryIds[subcategory.id] = nil
+    -- "Needs Categorization" is a special fake category with no real subcategories - don't auto-unassign subcategories for it
+    if categoryId ~= self.FURNITURE_NEEDS_CATEGORIZATION_CATEGORY_ID then
+        local subcategories = self:GetFurnitureSubcategories(categoryId)
+        for _, subcategory in pairs(subcategories) do
+            house.assignedCategoryIds[subcategory.id] = nil
+        end
     end
     self:OnSettingsChanged()
     return true
@@ -784,13 +814,13 @@ end
 
 SLASH_COMMANDS["/resetmagicsort"] = function ()
     MAGIC_SORTER:GetConfig().dirty = false
-    d("Quick Sort mode is now ready.")
+    MAGIC_SORTER_DEBUG_LOGGER:Info("Quick Sort mode is now ready.")
 end
 
 SLASH_COMMANDS["/debugfurniture"] = function ()
     local houseId = MAGIC_SORTER:GetSortManager():GetHouseId()
     if houseId == 0 then
-        d("|cff0000Not in a house.|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("Not in a house.")
         return
     end
 
@@ -849,46 +879,46 @@ SLASH_COMMANDS["/debugfurniture"] = function ()
 
     MAGIC_SORTER:GetData().debugFurniture[houseId] = debugEntry
 
-    d(string.format("|c00ffffDebug: Dumped %d furniture items from %s (House ID: %d)|r", itemCount, houseName, houseId))
-    d("|c00ffffData saved to saved variables.|r")
+    MAGIC_SORTER_DEBUG_LOGGER:Info("Debug: Dumped %d furniture items from %s (House ID: %d)", itemCount, houseName, houseId)
+    MAGIC_SORTER_DEBUG_LOGGER:Info("Data saved to saved variables.")
 
     local sortManager = MAGIC_SORTER:GetSortManager()
     local house = MAGIC_SORTER:GetStorageHouse(houseId)
     if house then
-        d(string.format("|cffff00Storage house: Yes|r"))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("Storage house: Yes")
         if house.assignedCategoryIds then
             local numCategories = 0
             for _ in pairs(house.assignedCategoryIds) do
                 numCategories = numCategories + 1
             end
-            d(string.format("|cffff00Assigned categories: %d|r", numCategories))
+            MAGIC_SORTER_DEBUG_LOGGER:Info("Assigned categories: %d", numCategories)
         else
-            d("|cff0000Assigned categories: NONE|r")
+            MAGIC_SORTER_DEBUG_LOGGER:Warn("Assigned categories: NONE")
         end
     else
-        d("|cff0000Storage house: No|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("Storage house: No")
     end
 
-    d("|c00ffffUse /dumpfurniture to see detailed output|r")
+    MAGIC_SORTER_DEBUG_LOGGER:Info("Use /dumpfurniture to see detailed output")
 end
 
 SLASH_COMMANDS["/dumpfurniture"] = function ()
     local houseId = MAGIC_SORTER:GetSortManager():GetHouseId()
     if houseId == 0 then
-        d("|cff0000Not in a house.|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("Not in a house.")
         return
     end
 
     local debugData = MAGIC_SORTER:GetData().debugFurniture
     if not debugData or not debugData[houseId] then
-        d("|cff0000No debug data for this house. Run /debugfurniture first.|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("No debug data for this house. Run /debugfurniture first.")
         return
     end
 
     local entry = debugData[houseId]
-    d(string.format("|c00ffff=== Furniture Debug: %s (House ID: %d) ===|r", entry.houseName, houseId))
-    d(string.format("Total items: %d", entry.itemCount))
-    d("|c00ffff--- Category Counts ---|r")
+    MAGIC_SORTER_DEBUG_LOGGER:Info("=== Furniture Debug: %s (House ID: %d) ===", entry.houseName, houseId)
+    MAGIC_SORTER_DEBUG_LOGGER:Info("Total items: %d", entry.itemCount)
+    MAGIC_SORTER_DEBUG_LOGGER:Info("--- Category Counts ---")
 
     local sortedCategories = {}
     for key, count in pairs(entry.categoryCounts) do
@@ -899,10 +929,10 @@ SLASH_COMMANDS["/dumpfurniture"] = function ()
     end)
 
     for _, cat in ipairs(sortedCategories) do
-        d(string.format("  %s: %d", cat.key, cat.count))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("  %s: %d", cat.key, cat.count)
     end
 
-    d("|c00ffff--- Subcategory Counts ---|r")
+    MAGIC_SORTER_DEBUG_LOGGER:Info("--- Subcategory Counts ---")
     local sortedSubcats = {}
     for key, count in pairs(entry.subcategoryCounts) do
         table.insert(sortedSubcats, { key = key, count = count })
@@ -912,17 +942,17 @@ SLASH_COMMANDS["/dumpfurniture"] = function ()
     end)
 
     for _, subcat in ipairs(sortedSubcats) do
-        d(string.format("  %s: %d", subcat.key, subcat.count))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("  %s: %d", subcat.key, subcat.count)
     end
 
-    d("|c00ffff--- First 20 Items ---|r")
-    for i = 1, math.min(20, #entry.furniture) do
+    MAGIC_SORTER_DEBUG_LOGGER:Info("--- First 20 Items ---")
+    for i = 1, zo_min(20, #entry.furniture) do
         local item = entry.furniture[i]
-        d(string.format("  %s: %s / %s (cat:%d subcat:%d)", item.itemName, item.categoryName, item.subcategoryName, item.categoryId, item.subcategoryId))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("  %s: %s / %s (cat:%d subcat:%d)", item.itemName, item.categoryName, item.subcategoryName, item.categoryId, item.subcategoryId)
     end
 
     if #entry.furniture > 20 then
-        d(string.format("|c00ffff... and %d more items|r", #entry.furniture - 20))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("... and %d more items", #entry.furniture - 20)
     end
 end
 
@@ -931,25 +961,25 @@ SLASH_COMMANDS["/debugcategories"] = function ()
     -- Initialize configuration if needed
     if not sortManager.categories then
         if not sortManager:GetAndValidateConfiguration() then
-            d("|cff0000Failed to initialize configuration. Check storage houses.|r")
+            MAGIC_SORTER_DEBUG_LOGGER:Warn("Failed to initialize configuration. Check storage houses.")
             return
         end
     end
 
     local houseId = sortManager:GetHouseId()
     if houseId == 0 then
-        d("|cff0000Not in a house.|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("Not in a house.")
         return
     end
 
     local house = MAGIC_SORTER:GetStorageHouse(houseId)
     if not house then
-        d("|cff0000Current house is not a storage house.|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("Current house is not a storage house.")
         return
     end
 
     local houseName = GetCollectibleName(GetCollectibleIdForHouse(houseId))
-    d(string.format("|c00ffff=== Category Debug for %s (House %d) ===|r", houseName, houseId))
+    MAGIC_SORTER_DEBUG_LOGGER:Info("=== Category Debug for %s (House %d) ===", houseName, houseId)
 
     -- Initialize saved vars
     if not MAGIC_SORTER:GetData().debugCategories then
@@ -974,14 +1004,14 @@ SLASH_COMMANDS["/debugcategories"] = function ()
             table.insert(debugData.assignedCategoryIds, catId)
         end
         table.sort(debugData.assignedCategoryIds)
-        d(string.format("|cffff00Assigned category IDs: %s|r", table.concat(debugData.assignedCategoryIds, ", ")))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("Assigned category IDs: %s", table.concat(debugData.assignedCategoryIds, ", "))
     else
-        d("|cff0000No categories assigned to this house|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("No categories assigned to this house")
     end
 
     -- Check categories table
     if sortManager.categories then
-        d("|c00ffff--- Categories Table ---|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Info("--- Categories Table ---")
         local catCount = 0
         for catId, houses in pairs(sortManager.categories) do
             catCount = catCount + 1
@@ -997,15 +1027,15 @@ SLASH_COMMANDS["/debugcategories"] = function ()
                 houseIds = houseList,
             }
             table.insert(debugData.categoriesTable, entry)
-            d(string.format("  Category %d (%s): houses %s", catId, catName, table.concat(houseList, ", ")))
+            MAGIC_SORTER_DEBUG_LOGGER:Info("  Category %d (%s): houses %s", catId, catName, table.concat(houseList, ", "))
         end
-        d(string.format("Total categories in table: %d", catCount))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("Total categories in table: %d", catCount)
     else
-        d("|cff0000Categories table not initialized|r")
+        MAGIC_SORTER_DEBUG_LOGGER:Warn("Categories table not initialized")
     end
 
     -- Test multiple items from the debug data
-    d("|c00ffff--- Testing Item Removal Logic ---|r")
+    MAGIC_SORTER_DEBUG_LOGGER:Info("--- Testing Item Removal Logic ---")
     local testItems =
     {
         { categoryId = 12, subcategoryId = 152, themeId = 13, name = "Boulders and Large Rocks (Daedric)", },
@@ -1038,23 +1068,23 @@ SLASH_COMMANDS["/debugcategories"] = function ()
 
         table.insert(debugData.testResults, testResult)
 
-        d(string.format("  %s:", testItem.name))
-        d(string.format("    IsFurniturePlaceableInHouse: %s", tostring(placeable)))
-        d(string.format("    IsFurniturePlaceableInAnyHouse: %s", tostring(placeableAny)))
-        d(string.format("    Target houses: %s", table.concat(testResult.targetHouseIds, ", ")))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("  %s:", testItem.name)
+        MAGIC_SORTER_DEBUG_LOGGER:Info("    IsFurniturePlaceableInHouse: %s", tostring(placeable))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("    IsFurniturePlaceableInAnyHouse: %s", tostring(placeableAny))
+        MAGIC_SORTER_DEBUG_LOGGER:Info("    Target houses: %s", table.concat(testResult.targetHouseIds, ", "))
     end
 
     local removableList = sortManager:GetRemovableFurnitureList()
     debugData.removableCount = #removableList
-    d(string.format("  GetRemovableFurnitureList: %d items", #removableList))
+    MAGIC_SORTER_DEBUG_LOGGER:Info("  GetRemovableFurnitureList: %d items", #removableList)
 
     local outboundList = sortManager:GetOutboundFurnitureList()
     debugData.outboundCount = #outboundList
-    d(string.format("  GetOutboundFurnitureList: %d items", #outboundList))
+    MAGIC_SORTER_DEBUG_LOGGER:Info("  GetOutboundFurnitureList: %d items", #outboundList)
 
     -- Save to SV
     MAGIC_SORTER:GetData().debugCategories[houseId] = debugData
-    d("|c00ffffData saved to saved variables.|r")
+    MAGIC_SORTER_DEBUG_LOGGER:Info("Data saved to saved variables.")
 end
 
 SLASH_COMMANDS["/re"] = ReloadUI

@@ -140,7 +140,7 @@ function MInventoryManager:GetBagFurnitureInfo(bag, slot)
 end
 
 function MInventoryManager:GetPlacedFurnitureInfo(furnitureId)
-    local link, collectibleLink = GetPlacedFurnitureLink(furnitureId)
+    local link, collectibleLink = GetPlacedFurnitureLink(furnitureId, LINK_STYLE_DEFAULT)
     if not collectibleLink or collectibleLink == "" then
         return self:GetFurnitureLinkInfo(link)
     end
@@ -653,7 +653,8 @@ do
         AddTooltipHandler(ItemTooltip, "SetTradeItem", GetTradeItemLink)
         AddTooltipHandler(ItemTooltip, "SetTradingHouseListing", GetTradingHouseListingItemLink)
         AddTooltipHandler(ItemTooltip, "SetPlacedFurniture", function (furnitureId)
-            return GetPlacedFurnitureLink(furnitureId)
+            local itemLink = GetPlacedFurnitureLink(furnitureId, LINK_STYLE_DEFAULT)
+            return itemLink
         end)
     end
 end

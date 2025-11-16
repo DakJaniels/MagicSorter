@@ -1123,16 +1123,19 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
                 local assignedCategories = MAGIC_SORTER:GetHouseCategoryAssignments(houseId)
                 local assignedParentCategories = {}
                 local assignedCategoryTable = {}
+                local needsCategorizationId = MAGIC_SORTER.FURNITURE_NEEDS_CATEGORIZATION_CATEGORY_ID
                 for _, category in ipairs(assignedCategories) do
                     table.insert(assignedCategoryTable, category)
-                    if category.parentId == C.SCROLL_SLIDER_ZERO_THRESHOLD then
+                    -- Exclude "Needs Categorization" from parent category filtering since it's a special fake category
+                    if category.parentId == C.SCROLL_SLIDER_ZERO_THRESHOLD and category.id ~= needsCategorizationId then
                         assignedParentCategories[category.id] = true
                     end
                 end
                 if #assignedCategoryTable ~= C.SCROLL_SLIDER_ZERO_THRESHOLD then
                     table.sort(assignedCategoryTable, AssignedCategoryComparer)
                     for index, category in ipairs(assignedCategoryTable) do
-                        if not assignedParentCategories[category.parentId] then
+                        -- Always show "Needs Categorization" and don't filter it based on parent category logic
+                        if category.id == needsCategorizationId or not assignedParentCategories[category.parentId] then
                             control:CreateAssignedCategory(houseBox, houseId, category.id, category.displayName, C.CATEGORY_ASSIGNMENT_CATEGORY_ITEM_OFFSET_X, tagY, C.CATEGORY_ASSIGNMENT_CATEGORY_ITEM_WIDTH, C.CATEGORY_ASSIGNMENT_CATEGORY_ITEM_HEIGHT)
                             tagY = tagY + C.CATEGORY_ASSIGNMENT_CATEGORY_HEIGHT
                             houseHeight = houseHeight + C.CATEGORY_ASSIGNMENT_CATEGORY_HEIGHT

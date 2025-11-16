@@ -5,6 +5,7 @@
 ## AddOnVersion: 25
 ## Version: 25
 ## SavedVariables: MagicSorter
+## OptionalDependsOn: LibDebugLogger>=268
 
 ; The MIT License (MIT)
 ;
@@ -27,6 +28,7 @@
 ; THE SOFTWARE.
 
 function_util.lua
+debuglogger.lua
 inventorymanager.lua
 sortmanager.lua
 magicsorter.lua
