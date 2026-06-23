@@ -19,7 +19,7 @@ function MSorter:Initialize()
 end
 
 function MSorter:InitializeStaticData()
-    self.AddonVersion = 25
+    self.AddonVersion = 26
     self.AddonName = "MagicSorter"
     self.AddonDev = "Architectura"
     self.EventDescriptor = "magicsorter"
@@ -137,7 +137,7 @@ end
 function MSorter:InitializeKeybinds()
     if not self.initializedKeybinds then
         self.initializedKeybinds = true
-        KEYBINDING_MANAGER.IsChordingAlwaysEnabled = function ()
+        function KEYBINDINGS_MANAGER:IsChordingAlwaysEnabled()
             return true
         end
         ZO_CreateStringId("SI_BINDING_NAME_" .. self.KeybindId, "Magic Sorter")

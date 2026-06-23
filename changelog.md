@@ -1,26 +1,38 @@
 # Changelog
 
+## [26] - 2026-06-23
+
+- API update.
+- KEYBINDING_MANAGER -> KEYBINDINGS_MANAGER rename
+
 ## [25] - 2025-11-14
+
 - Fixed an issue where items weren't being moved from houses with no categories assigned to houses with parent categories assigned (e.g., "Conservatory, All"). The system now correctly checks both subcategory and parent category assignments when determining where items can be placed.
 - Removed the requirement that target houses must be visited before items can be moved to them, allowing items to be moved to any house with appropriate category assignments regardless of visit order.
 
 ## [23] - 2025-06-02
+
 - API update.
 - Bug Fixes.
 
 ## [20] - 2021-03-13
+
 - API update.
 
 ## [19] - 2021-03-07
+
 - API update.
 
 ## [18] - 2020-05-26
+
 - API update.
 
 ## [17] - 2020-03-05
+
 - API update.
 
 ## [16] - 2019-12-30
+
 - Added a new Quick Sort mode that will perform an abbreviated sort in significantly less time.
   - Quick Sort works by remembering your storage homes' inventories after your first full sort is completed.
   - Please enable Magic Sorter for all of your characters in order to make sure that Magic Sorter's knowledge of your homes' inventories remains accurate and up-to-date.
@@ -32,23 +44,29 @@
 - Bug fixes.
 
 ## [15] - 2019-12-27
+
 - Bug fixes.
 
 ## [14] - 2019-12-24
+
 - Bug fixes.
 
 ## [12] - 2019-12-24
+
 - Now you may optionally assign specific furniture style(s) to each storage house. When one or more style(s) are assigned to a storage house, only furnishings of that style will be stored there.
 
 ## [11] - 2019-12-22
+
 - Revised the completion summary report to instead list furniture categories, if any, for which there was insufficient room to store those types of items based on your storage house category assignments.
 - The last sort's completion summary report will be shown side-by-side with the wizard's House Selection and Category Assignment screens to allow you to more easily adjust your houses/category assignments to address insufficient storage capacity, if necessary.
 
 ## [10] - 2019-12-21
+
 - Resolved an issue that would place sorted furniture a great distance from the home's entrance when the "Organize Furniture" option was disabled.
 - Added a summary of the number of items that could not be stored due to a lack of capacity to the final sort report; these figures are broken down by Storage House as well as your inventory.
 
 ## [9] - 2019-12-18
+
 - Resolved an issue that could cause sorting to fail whenever your character had stolen furnishings in their inventory.
 - Split the details panel into two separate tabs: Storage Houses and Action Log.
 - The Action Log now scrolls and shows up to the last 1,000 actions taken by Magic Sorter.
@@ -57,6 +75,7 @@
 - Further refined the organizational layout of stored items when the "Organize Furniture" option is enabled for additional compactness.
 
 ## [8] - 2019-12-12
+
 - Resolved an error that would appear when leaving a house.
 - Resolved an error that would appear when attempting to sort from outside one of your own homes.
 - Resolved an issue that could prevent a storage house with no assigned categories from being visited for the removal of items destined for other homes.
@@ -69,6 +88,7 @@
 - Further optimized the storage algorithm.
 
 ## [4] - 2019-12-11
+
 - Renamed to Magic Sorter: Furniture Storage Automation for clarification of the purpose of this addon.
 - Sorting now requires at least 1 available inventory slot when starting; please don't actually try to sort with only 1 available inventory slot.
 - Sorting now initially visits each storage home at least once to assess the available storage capacity.
@@ -79,6 +99,7 @@
 - Minor user interface adjustments.
 
 ## [3] - 2019-12-09
+
 - Updated to prefer the placement of smaller stacks of items in order to free inventory space more quickly.
 - Updated to prefer the removal of larger stacks of the same item type in order to use inventory space more efficiently.
 - Reaching the Special Furnishing limit will no longer prevent additional Traditional Furnishings from being stored in the home.
@@ -86,9 +107,11 @@
 - Minor user interface adjustments.
 
 ## [2] - 2019-12-08
+
 - Added detail panel to Magic Sorter status window that lists each storage houses' name and the number of remaining outbound and inbound items.
 - Your character will now automatically jump to the home's entry when starting Magic Sorter.
 - Your furnishings will be placed slightly further back into the home to avoid placing larger items in a manner that overlaps the home's entry point.
 
 ## [1] - 2019-12-07
+
 - First release.
