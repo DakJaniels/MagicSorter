@@ -4,7 +4,7 @@ local VERTEX_INDEX_4 = 4
 local VERTEX_INDEX_8 = 8
 
 -- Magic Sorter Dialog Constants
----@class MagicSorterDialogs
+--- @class MagicSorterDialogs
 MagicSorterDialogs = {}
 
 MagicSorterDialogs.Constants =

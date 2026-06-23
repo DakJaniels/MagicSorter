@@ -1,4 +1,5 @@
----@diagnostic disable: missing-global-doc
+--- @diagnostic disable: missing-global-doc
+
 local function CompositeIterator(iteratorCallbackArray)
     if #iteratorCallbackArray == 0 then
         return function () end

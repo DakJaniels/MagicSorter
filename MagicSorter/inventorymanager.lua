@@ -1,6 +1,9 @@
----@class MInventoryManager : ZO_InitializingObject
+--- @class MInventoryManager : ZO_InitializingObject
 local MInventoryManager = ZO_InitializingObject:Subclass()
 
+---
+--- @param dataManager any
+--- @return MInventoryManager
 function InstantiateMagicInventoryManager(dataManager)
     local manager = MInventoryManager:New(dataManager)
     return manager
@@ -107,12 +110,12 @@ function MInventoryManager:GetItemLinkItemId(link)
 end
 
 ---
----@param link string
----@return string|nil link
----@return integer|nil categoryId
----@return integer|nil subcategoryId
----@return FurnitureThemeType|nil furnitureTheme
----@return HousingFurnishingLimitType|nil placementLimitType
+--- @param link string
+--- @return string|nil link
+--- @return integer|nil categoryId
+--- @return integer|nil subcategoryId
+--- @return FurnitureThemeType|nil furnitureTheme
+--- @return HousingFurnishingLimitType|nil placementLimitType
 function MInventoryManager:GetFurnitureLinkInfo(link)
     if link and link ~= "" then
         local furnitureDataId = GetItemLinkFurnitureDataId(link)
@@ -213,8 +216,8 @@ function MInventoryManager:GetHouseInventory(houseId)
 end
 
 ---
----@return string characterId
----@return string characterName
+--- @return string characterId
+--- @return string characterName
 function MInventoryManager:GetCurrentCharacter()
     local numCharacters = GetNumCharacters()
     local characterId = GetCurrentCharacterId()

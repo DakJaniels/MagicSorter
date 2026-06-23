@@ -1,4 +1,4 @@
----@diagnostic disable: undefined-field, param-type-mismatch
+--- @diagnostic disable: undefined-field, param-type-mismatch
 
 local eventManager = GetEventManager()
 local windowManager = GetWindowManager()
@@ -8,15 +8,15 @@ local animationManager = GetAnimationManager()
 local C = MagicSorterDialogs.Constants
 
 -- Animation Update Functions
----@param animation AnimationTimeline
+--- @param animation AnimationTimeline
 function MagicSorterDialogs.LogoAnimation_OnStop(animation)
     if not animation:GetAnimatedControl():IsHidden() then
         animation:GetTimeline():PlayFromStart()
     end
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.LogoAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local logo, logo1, logo2, logo3 = control.logo, control.logo1, control.logo2, control.logo3
@@ -59,23 +59,23 @@ function MagicSorterDialogs.LogoAnimation_UpdateFunction(animation, progress)
     end
 end
 
----@param animation MagicSorter_DragTagHighlightAnimation
----@param progress number
+--- @param animation MagicSorter_DragTagHighlightAnimation
+--- @param progress number
 function MagicSorterDialogs.DragTagHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local backdrop = control:GetNamedChild("LabelBackdrop")
     backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_DRAG_TAG_HIGHLIGHT_MIN + C.RGB_WEIGHT_DRAG_TAG_HIGHLIGHT_MAX * progress)
 end
 
----@param animation MagicSorter_RemoveButtonHighlightAnimation
----@param progress number
+--- @param animation MagicSorter_RemoveButtonHighlightAnimation
+--- @param progress number
 function MagicSorterDialogs.RemoveButtonHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     control:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_REMOVE_BUTTON_HIGHLIGHT_MIN + C.RGB_WEIGHT_REMOVE_BUTTON_HIGHLIGHT_MAX * progress)
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.ButtonHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local backdrop = control:GetNamedChild("Backdrop")
@@ -84,17 +84,17 @@ function MagicSorterDialogs.ButtonHighlightAnimation_UpdateFunction(animation, p
     backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_BUTTON_HIGHLIGHT_MIN + C.RGB_WEIGHT_BUTTON_HIGHLIGHT_MAX * progress)
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.ToggleHoverAnimation_UpdateFunction(animation, progress)
     progress = ZO_EaseInCubic(progress)
     local backdrop = animation:GetAnimatedControl().backdrop
-    ---@cast backdrop TextureControl
+    --- @cast backdrop TextureControl
     backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_TOGGLE_HOVER_MIN + C.RGB_WEIGHT_TOGGLE_HOVER_MAX * progress)
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.ToggleSelectAnimation_UpdateFunction(animation, progress)
     progress = ZO_EaseInCubic(progress)
     local control = animation:GetAnimatedControl()
@@ -105,8 +105,8 @@ function MagicSorterDialogs.ToggleSelectAnimation_UpdateFunction(animation, prog
     control.backdrop:SetColor(r, g, C.COLOR_LERP_TOGGLE_SELECT_B, C.ALPHA_FULL)
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.TabButtonHighlightAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     local backdrop = control:GetNamedChild("Backdrop")
@@ -116,8 +116,8 @@ function MagicSorterDialogs.TabButtonHighlightAnimation_UpdateFunction(animation
     backdrop:SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_TAB_BUTTON_HIGHLIGHT_MIN + C.RGB_WEIGHT_TAB_BUTTON_HIGHLIGHT_MAX * progress)
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.OptionButtonHighlightAnimation_UpdateFunction(animation, progress)
     progress = ZO_EaseInCubic(progress)
     local r = zo_lerp(C.COLOR_LERP_OPTION_BUTTON_R, C.COLOR_LERP_OPTION_BUTTON_R, progress)
@@ -137,14 +137,14 @@ function MagicSorterDialogs.OptionButtonHighlightAnimation_UpdateFunction(animat
     iconTexture:SetDesaturation(desat)
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.OptionButtonHoverAnimation_UpdateFunction(animation, progress)
     progress = ZO_EaseInCubic(progress)
     animation:GetAnimatedControl():GetNamedChild("Icon"):SetTextureSampleProcessingWeight(TEX_SAMPLE_PROCESSING_RGB, C.RGB_WEIGHT_OPTION_BUTTON_HOVER_MIN + C.RGB_WEIGHT_OPTION_BUTTON_HOVER_MAX * progress)
 end
 
----@param timeline AnimationTimeline
+--- @param timeline AnimationTimeline
 function MagicSorterDialogs.TopLevelBackdropAnimation_OnStop(timeline)
     local control = timeline:GetAnimation(1):GetAnimatedControl()
     if not timeline:IsPlaying() and control and not control:IsHidden() then
@@ -152,8 +152,8 @@ function MagicSorterDialogs.TopLevelBackdropAnimation_OnStop(timeline)
     end
 end
 
----@param animation AnimationTimeline
----@param completedPlaying boolean
+--- @param animation AnimationTimeline
+--- @param completedPlaying boolean
 function MagicSorterDialogs.TopLevelBackdropAnimation_OnPlay(animation, completedPlaying)
     local control = animation:GetAnimatedControl()
     local underlay1 = control:GetNamedChild("Underlay1")
@@ -183,8 +183,8 @@ function MagicSorterDialogs.TopLevelBackdropAnimation_OnPlay(animation, complete
     texture2:SetAlpha(C.ALPHA_NONE)
 end
 
----@param animation AnimationTimeline
----@param progress number
+--- @param animation AnimationTimeline
+--- @param progress number
 function MagicSorterDialogs.TopLevelBackdropAnimation_UpdateFunction(animation, progress)
     local control = animation:GetAnimatedControl()
     if control:IsHidden() then
@@ -244,7 +244,7 @@ function MagicSorterDialogs.TopLevelBackdropAnimation_UpdateFunction(animation, 
 end
 
 -- Control Initialization Functions
----@param control MagicSorter_DataRow
+--- @param control MagicSorter_DataRow
 function MagicSorterDialogs.DataRow_OnInitialized(control)
     control.label1 = control:GetNamedChild("Label1")
     control.label2 = control:GetNamedChild("Label2")
@@ -280,12 +280,12 @@ function MagicSorterDialogs.DataRow_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_Label
+--- @param control MagicSorter_Label
 function MagicSorterDialogs.Label_OnInitialized(control)
     control:GetParent():SetDimensions(control:GetDimensions())
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.LabelBackdrop_OnInitialized(control)
     control:SetVertexColors(C.VERTEX_INDEX_1, C.LABEL_BACKDROP_COLOR_V1_R, C.LABEL_BACKDROP_COLOR_V1_G, C.LABEL_BACKDROP_COLOR_V1_B, C.ALPHA_NONE)
     control:SetVertexColors(C.VERTEX_INDEX_2, C.LABEL_BACKDROP_COLOR_V2_R, C.LABEL_BACKDROP_COLOR_V2_G, C.LABEL_BACKDROP_COLOR_V2_B, C.ALPHA_FULL)
@@ -293,7 +293,7 @@ function MagicSorterDialogs.LabelBackdrop_OnInitialized(control)
     control:SetVertexColors(C.VERTEX_INDEX_8, C.LABEL_BACKDROP_COLOR_V8_R, C.LABEL_BACKDROP_COLOR_V8_G, C.LABEL_BACKDROP_COLOR_V8_B, C.ALPHA_NONE)
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.LabelBackdrop_OnTextureLoaded(control)
     control:SetVertexColors(C.VERTEX_INDEX_1, C.LABEL_BACKDROP_COLOR_V1_R, C.LABEL_BACKDROP_COLOR_V1_G, C.LABEL_BACKDROP_COLOR_V1_B, C.ALPHA_NONE)
     control:SetVertexColors(C.VERTEX_INDEX_2, C.LABEL_BACKDROP_COLOR_V2_R, C.LABEL_BACKDROP_COLOR_V2_G, C.LABEL_BACKDROP_COLOR_V2_B, C.ALPHA_FULL)
@@ -301,12 +301,12 @@ function MagicSorterDialogs.LabelBackdrop_OnTextureLoaded(control)
     control:SetVertexColors(C.VERTEX_INDEX_8, C.LABEL_BACKDROP_COLOR_V8_R, C.LABEL_BACKDROP_COLOR_V8_G, C.LABEL_BACKDROP_COLOR_V8_B, C.ALPHA_NONE)
 end
 
----@param control MagicSorter_Button
+--- @param control MagicSorter_Button
 function MagicSorterDialogs.Button_OnInitialized(control)
     control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_ButtonHighlightAnimation", control)
 end
 
----@param control MagicSorter_Button
+--- @param control MagicSorter_Button
 function MagicSorterDialogs.Button_OnMouseEnter(control)
     if control then
         control.highlightAnimation:PlayFromStart()
@@ -316,7 +316,7 @@ function MagicSorterDialogs.Button_OnMouseEnter(control)
     end
 end
 
----@param control MagicSorter_Button
+--- @param control MagicSorter_Button
 function MagicSorterDialogs.Button_OnMouseExit(control)
     if control then
         control.highlightAnimation:PlayFromEnd()
@@ -326,7 +326,7 @@ function MagicSorterDialogs.Button_OnMouseExit(control)
     end
 end
 
----@param control MagicSorter_Toggle
+--- @param control MagicSorter_Toggle
 function MagicSorterDialogs.Toggle_OnInitialized(control)
     control.isSelected = false
     control.backdrop = control:GetNamedChild("Backdrop")
@@ -359,27 +359,27 @@ function MagicSorterDialogs.Toggle_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_Toggle
+--- @param control MagicSorter_Toggle
 function MagicSorterDialogs.Toggle_OnMouseEnter(control)
     control.highlightAnimation:PlayFromStart()
 end
 
----@param control MagicSorter_Toggle
+--- @param control MagicSorter_Toggle
 function MagicSorterDialogs.Toggle_OnMouseExit(control)
     control.highlightAnimation:PlayFromEnd()
 end
 
----@param control MagicSorter_Toggle
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Toggle
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.Toggle_OnMouseDown(control, button, ctrl, alt, shift, command)
     control:UserToggle()
 end
 
----@param control MagicSorter_TabButton
+--- @param control MagicSorter_TabButton
 function MagicSorterDialogs.TabButton_OnInitialized(control)
     control.active = false
     control.backdrop = control:GetNamedChild("Backdrop")
@@ -395,22 +395,22 @@ function MagicSorterDialogs.TabButton_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_TabButton
+--- @param control MagicSorter_TabButton
 function MagicSorterDialogs.TabButton_OnMouseEnter(control)
     control.highlightAnimation:PlayFromStart()
 end
 
----@param control MagicSorter_TabButton
+--- @param control MagicSorter_TabButton
 function MagicSorterDialogs.TabButton_OnMouseExit(control)
     control.highlightAnimation:PlayFromEnd()
 end
 
----@param control MagicSorter_TabButton
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_TabButton
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.TabButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     control:SetActive()
     if control.onMouseDown then
@@ -418,7 +418,7 @@ function MagicSorterDialogs.TabButton_OnMouseDown(control, button, ctrl, alt, sh
     end
 end
 
----@param control MagicSorter_OptionButton
+--- @param control MagicSorter_OptionButton
 function MagicSorterDialogs.OptionButton_OnInitialized(control)
     control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_OptionButtonHighlightAnimation", control)
     control.hoverAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_OptionButtonHoverAnimation", control)
@@ -451,145 +451,145 @@ function MagicSorterDialogs.OptionButton_OnInitialized(control)
     control:Refresh()
 end
 
----@param control MagicSorter_OptionButton
+--- @param control MagicSorter_OptionButton
 function MagicSorterDialogs.OptionButton_OnMouseEnter(control)
     control.hoverAnimation:PlayForward()
 end
 
----@param control MagicSorter_OptionButton
+--- @param control MagicSorter_OptionButton
 function MagicSorterDialogs.OptionButton_OnMouseExit(control)
     control.hoverAnimation:PlayBackward()
 end
 
----@param control MagicSorter_OptionButton
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_OptionButton
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.OptionButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     control:Toggle()
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.OptionButtonOverlay_OnMouseEnter(control)
     if control.tooltip then
         ZO_Tooltips_ShowTextTooltip(control, RIGHT, control.tooltip)
     end
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.OptionButtonOverlay_OnMouseExit(control)
     if control.tooltip then
         ZO_Tooltips_HideTextTooltip()
     end
 end
 
----@param control TextureControl
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control TextureControl
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.OptionButtonOverlay_OnMouseDown(control, button, ctrl, alt, shift, command)
     control:GetParent():Toggle()
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.RemovableItemBackdrop_OnInitialized(control)
     control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
     control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.RemovableItemBackdrop_OnTextureLoaded(control)
     control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
     control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_R, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_G, C.REMOVABLE_ITEM_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.RemovableItemRemoveButton_OnInitialized(control)
     control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_RemoveButtonHighlightAnimation", control)
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.RemovableItemRemoveButton_OnMouseEnter(control)
     control.highlightAnimation:PlayForward()
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.RemovableItemRemoveButton_OnMouseExit(control)
     control.highlightAnimation:PlayBackward()
 end
 
----@param control MagicSorter_DropBox
+--- @param control MagicSorter_DropBox
 function MagicSorterDialogs.DropBox_OnInitialized(control)
     control.overlay = control:GetNamedChild("Overlay")
     control.overlayLabel = control.overlay:GetNamedChild("Label")
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.DropBoxTile_OnInitialized(control)
     control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.DROPBOX_TILE_COLOR_V5_R, C.DROPBOX_TILE_COLOR_V5_G, C.DROPBOX_TILE_COLOR_V5_B, C.ALPHA_DROPBOX_TILE)
     control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.DROPBOX_TILE_COLOR_V10_R, C.DROPBOX_TILE_COLOR_V10_G, C.DROPBOX_TILE_COLOR_V10_B, C.ALPHA_DROPBOX_TILE)
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.DropBoxOverlay_OnMouseEnter(control)
     if control.tooltip then
         ZO_Tooltips_ShowTextTooltip(control, RIGHT, control.tooltip)
     end
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.DropBoxOverlay_OnMouseExit(control)
     if control.tooltip then
         ZO_Tooltips_HideTextTooltip()
     end
 end
 
----@param control LabelControl
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control LabelControl
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.AssignThemesButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     MagicSorter_ThemeAssignment:SetHouse(control:GetParent():GetParent().house)
     MAGIC_SORTER:SetDialogHidden("CategoryAssignment", true)
     MAGIC_SORTER:SetDialogHidden("ThemeAssignment", false)
 end
 
----@param control LabelControl
+--- @param control LabelControl
 function MagicSorterDialogs.AssignThemesButton_OnMouseEnter(control)
     control:SetColor(C.ASSIGN_THEMES_BUTTON_HOVER_R, C.ASSIGN_THEMES_BUTTON_HOVER_G, C.ASSIGN_THEMES_BUTTON_HOVER_B, C.ALPHA_FULL)
     control:GetNamedChild("Backdrop"):SetColor(C.ASSIGN_THEMES_BUTTON_BACKDROP_HOVER_R, C.ASSIGN_THEMES_BUTTON_BACKDROP_HOVER_G, C.ASSIGN_THEMES_BUTTON_BACKDROP_HOVER_B, C.ALPHA_FULL)
 end
 
----@param control LabelControl
+--- @param control LabelControl
 function MagicSorterDialogs.AssignThemesButton_OnMouseExit(control)
     control:SetColor(C.ASSIGN_THEMES_BUTTON_NORMAL_R, C.ASSIGN_THEMES_BUTTON_NORMAL_G, C.ASSIGN_THEMES_BUTTON_NORMAL_B, C.ALPHA_FULL)
     control:GetNamedChild("Backdrop"):SetColor(C.ASSIGN_THEMES_BUTTON_BACKDROP_NORMAL_R, C.ASSIGN_THEMES_BUTTON_BACKDROP_NORMAL_G, C.ASSIGN_THEMES_BUTTON_BACKDROP_NORMAL_B, C.ALPHA_FULL)
 end
 
----@param control LabelControl
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control LabelControl
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.ThemeAssignments_OnMouseDown(control, button, ctrl, alt, shift, command)
     MagicSorter_ThemeAssignment:SetHouse(control:GetParent():GetParent().house)
     MAGIC_SORTER:SetDialogHidden("CategoryAssignment", true)
     MAGIC_SORTER:SetDialogHidden("ThemeAssignment", false)
 end
 
----@param control MagicSorter_DragTag
+--- @param control MagicSorter_DragTag
 function MagicSorterDialogs.DragTag_OnInitialized(control)
     control.highlightAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_DragTagHighlightAnimation", control)
 end
 
----@param control MagicSorter_DragTag
+--- @param control MagicSorter_DragTag
 function MagicSorterDialogs.DragTag_OnMoveStart(control)
     if not control.originalParent then
         control.originalParent = control:GetParent()
@@ -597,7 +597,7 @@ function MagicSorterDialogs.DragTag_OnMoveStart(control)
     control:SetParent(MagicSorter_DragTopLevel)
 end
 
----@param control MagicSorter_DragTag
+--- @param control MagicSorter_DragTag
 function MagicSorterDialogs.DragTag_OnMoveStop(control)
     MAGIC_SORTER:OnDropCategoryTag(control)
     if control.originalParent then
@@ -609,7 +609,7 @@ function MagicSorterDialogs.DragTag_OnMoveStop(control)
                  end, C.DRAG_TAG_RESET_DELAY_MS)
 end
 
----@param control MagicSorter_DragTag
+--- @param control MagicSorter_DragTag
 function MagicSorterDialogs.DragTag_OnMouseEnter(control)
     control.highlightAnimation:PlayForward()
     if control.tooltip then
@@ -617,7 +617,7 @@ function MagicSorterDialogs.DragTag_OnMouseEnter(control)
     end
 end
 
----@param control MagicSorter_DragTag
+--- @param control MagicSorter_DragTag
 function MagicSorterDialogs.DragTag_OnMouseExit(control)
     control.highlightAnimation:PlayBackward()
     if control.tooltip then
@@ -625,19 +625,19 @@ function MagicSorterDialogs.DragTag_OnMouseExit(control)
     end
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.DragTagLabelBackdrop_OnInitialized(control)
     control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
     control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
----@param control TextureControl
+--- @param control TextureControl
 function MagicSorterDialogs.DragTagLabelBackdrop_OnTextureLoaded(control)
     control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V10_B, C.ALPHA_FULL)
     control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_R, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_G, C.DRAG_TAG_LABEL_BACKDROP_COLOR_V5_B, C.ALPHA_FULL)
 end
 
----@param control MagicSorter_StatusDetailRow
+--- @param control MagicSorter_StatusDetailRow
 function MagicSorterDialogs.StatusDetailRow_OnInitialized(control)
     control.backdrop = control:GetNamedChild("Backdrop")
     control.houseName = control:GetNamedChild("HouseName")
@@ -690,7 +690,7 @@ function MagicSorterDialogs.StatusDetailRow_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_StatusDetailRow
+--- @param control MagicSorter_StatusDetailRow
 function MagicSorterDialogs.StatusDetailRow_OnMouseEnter(control)
     if control.houseId and control.houseId > 0 then
         local sortManager = MAGIC_SORTER:GetSortManager()
@@ -702,14 +702,14 @@ function MagicSorterDialogs.StatusDetailRow_OnMouseEnter(control)
     end
 end
 
----@param control MagicSorter_StatusDetailRow
+--- @param control MagicSorter_StatusDetailRow
 function MagicSorterDialogs.StatusDetailRow_OnMouseExit(control)
     if control.houseId and control.houseId > 0 then
         ZO_Tooltips_HideTextTooltip()
     end
 end
 
----@param control MagicSorter_TopLevelStandardLogoFooter
+--- @param control MagicSorter_TopLevelStandardLogoFooter
 function MagicSorterDialogs.LogoFooter_OnInitialized(control)
     local height1 = C.LOGO_TEXTURE_HEIGHT_1
     local height2 = C.LOGO_TEXTURE_HEIGHT_2
@@ -727,40 +727,40 @@ function MagicSorterDialogs.LogoFooter_OnInitialized(control)
     control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_LogoAnimation", control)
 end
 
----@param control MagicSorter_TopLevelStandardLogoFooter
----@param hidden boolean
+--- @param control MagicSorter_TopLevelStandardLogoFooter
+--- @param hidden boolean
 function MagicSorterDialogs.LogoFooter_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
     end
 end
 
----@param control Control
----@param hidden boolean
+--- @param control Control
+--- @param hidden boolean
 function MagicSorterDialogs.LogoFooter_OnEffectivelyHidden(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:Stop()
     end
 end
 
----@param control Control
+--- @param control Control
 function MagicSorterDialogs.Logo_OnTextureLoaded(control)
     control:SetVertexColors(C.VERTEX_INDEX_1_PLUS_4, C.LOGO_FOOTER_COLOR_V5_R, C.LOGO_FOOTER_COLOR_V5_G, C.LOGO_FOOTER_COLOR_V5_B, C.ALPHA_FULL)
     control:SetVertexColors(C.VERTEX_INDEX_2_PLUS_8, C.LOGO_FOOTER_COLOR_V10_R, C.LOGO_FOOTER_COLOR_V10_G, C.LOGO_FOOTER_COLOR_V10_B, C.ALPHA_FULL)
 end
 
----@param control MagicSorter_TopLevelMovable
+--- @param control MagicSorter_TopLevelMovable
 function MagicSorterDialogs.TopLevelMovable_OnShow(control)
     MAGIC_SORTER:OnDialogShow(control)
 end
 
----@param control MagicSorter_TopLevelMovable
+--- @param control MagicSorter_TopLevelMovable
 function MagicSorterDialogs.TopLevelMovable_OnMoveStop(control)
     MAGIC_SORTER:OnDialogMoved(control)
 end
 
 -- House Selection Dialog
----@param control MagicSorter_HouseSelection
+--- @param control MagicSorter_HouseSelection
 function MagicSorterDialogs.HouseSelection_OnInitialized(control)
     local topLevel = control
     control.optionButtons = {}
@@ -870,39 +870,39 @@ function MagicSorterDialogs.HouseSelection_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_HouseSelection
----@param hidden boolean
+--- @param control MagicSorter_HouseSelection
+--- @param hidden boolean
 function MagicSorterDialogs.HouseSelection_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
     end
 end
 
----@param control MagicSorter_HouseSelection
----@param hidden boolean
+--- @param control MagicSorter_HouseSelection
+--- @param hidden boolean
 function MagicSorterDialogs.HouseSelection_OnEffectivelyHidden(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:Stop()
     end
 end
 
----@param control MagicSorter_HouseSelection
+--- @param control MagicSorter_HouseSelection
 function MagicSorterDialogs.HouseSelection_OnResizeStop(control)
     MAGIC_SORTER:OnDialogMoved(control)
     control:Refresh()
 end
 
----@param control ScrollControl
+--- @param control ScrollControl
 function MagicSorterDialogs.HouseSelectionScrollPanel_OnInitialized(control)
     control:GetOwningWindow().scrollPanel = control
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.HouseSelectionScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().scrollSlider
     local value = slider:GetValue()
@@ -912,45 +912,45 @@ function MagicSorterDialogs.HouseSelectionScrollPanel_OnMouseWheel(control, delt
     slider:SetValue(value - (delta * C.HOUSE_SELECTION_SCROLL_MULTIPLIER))
 end
 
----@param control Control
+--- @param control Control
 function MagicSorterDialogs.HouseSelectionScrollContents_OnInitialized(control)
     control:GetOwningWindow().scrollContents = control
 end
 
----@param control SliderControl
+--- @param control SliderControl
 function MagicSorterDialogs.HouseSelectionScrollSlider_OnInitialized(control)
     control:GetOwningWindow().scrollSlider = control
     control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.HouseSelectionScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetOwningWindow().scrollPanel:SetVerticalScroll(value)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.HouseSelectionCloseButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     MAGIC_SORTER:SetDialogHidden("HouseSelection", true)
 end
 
----@param control MagicSorter_CenterLabel
+--- @param control MagicSorter_CenterLabel
 function MagicSorterDialogs.HouseSelectionCountLabel_OnInitialized(control)
     control:GetOwningWindow().countLabel = control:GetNamedChild("Label")
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.HouseSelectionNextButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     if control:GetOwningWindow():Submit() then
         MAGIC_SORTER:SetDialogHidden("HouseSelection", true)
@@ -959,7 +959,7 @@ function MagicSorterDialogs.HouseSelectionNextButton_OnMouseDown(control, button
 end
 
 -- Category Assignment Dialog
----@param control MagicSorter_CategoryAssignment
+--- @param control MagicSorter_CategoryAssignment
 function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
     local topLevel = control
     local function AssignedCategoryComparer(catA, catB)
@@ -1205,39 +1205,39 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_CategoryAssignment
----@param hidden boolean
+--- @param control MagicSorter_CategoryAssignment
+--- @param hidden boolean
 function MagicSorterDialogs.CategoryAssignment_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
     end
 end
 
----@param control MagicSorter_CategoryAssignment
----@param hidden boolean
+--- @param control MagicSorter_CategoryAssignment
+--- @param hidden boolean
 function MagicSorterDialogs.CategoryAssignment_OnEffectivelyHidden(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:Stop()
     end
 end
 
----@param control MagicSorter_CategoryAssignment
+--- @param control MagicSorter_CategoryAssignment
 function MagicSorterDialogs.CategoryAssignment_OnResizeStop(control)
     MAGIC_SORTER:OnDialogMoved(control)
     control:Refresh()
 end
 
----@param control ScrollControl
+--- @param control ScrollControl
 function MagicSorterDialogs.CategoryScrollPanel_OnInitialized(control)
     control:GetOwningWindow().categoryScrollPanel = control
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.CategoryScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().categoryScrollSlider
     local value = slider:GetValue()
@@ -1247,35 +1247,35 @@ function MagicSorterDialogs.CategoryScrollPanel_OnMouseWheel(control, delta, ctr
     slider:SetValue(value - (delta * C.CATEGORY_ASSIGNMENT_SCROLL_MULTIPLIER))
 end
 
----@param control Control
+--- @param control Control
 function MagicSorterDialogs.CategoryScrollContents_OnInitialized(control)
     control:GetOwningWindow().categoryScrollContents = control
 end
 
----@param control SliderControl
+--- @param control SliderControl
 function MagicSorterDialogs.CategoryScrollSlider_OnInitialized(control)
     control:GetOwningWindow().categoryScrollSlider = control
     control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.CategoryScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetOwningWindow().categoryScrollPanel:SetVerticalScroll(value)
 end
 
----@param control ScrollControl
+--- @param control ScrollControl
 function MagicSorterDialogs.HouseScrollPanel_OnInitialized(control)
     control:GetOwningWindow().houseScrollPanel = control
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.HouseScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().houseScrollSlider
     local value = slider:GetValue()
@@ -1285,41 +1285,41 @@ function MagicSorterDialogs.HouseScrollPanel_OnMouseWheel(control, delta, ctrl, 
     slider:SetValue(value - (delta * C.CATEGORY_ASSIGNMENT_SCROLL_MULTIPLIER))
 end
 
----@param control Control
+--- @param control Control
 function MagicSorterDialogs.HouseScrollContents_OnInitialized(control)
     control:GetOwningWindow().houseScrollContents = control
 end
 
----@param control SliderControl
+--- @param control SliderControl
 function MagicSorterDialogs.HouseScrollSlider_OnInitialized(control)
     control:GetOwningWindow().houseScrollSlider = control
     control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.HouseScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetOwningWindow().houseScrollPanel:SetVerticalScroll(value)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.CategoryAssignmentBackButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     MAGIC_SORTER:SetDialogHidden("CategoryAssignment", true)
     MAGIC_SORTER:SetDialogHidden("HouseSelection", false)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.CategoryAssignmentNextButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     if control:GetOwningWindow():Submit() then
         MAGIC_SORTER:SetDialogHidden("CategoryAssignment", true)
@@ -1328,7 +1328,7 @@ function MagicSorterDialogs.CategoryAssignmentNextButton_OnMouseDown(control, bu
 end
 
 -- Theme Assignment Dialog
----@param control MagicSorter_ThemeAssignment
+--- @param control MagicSorter_ThemeAssignment
 function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
     local buttonWidth = C.THEME_ASSIGNMENT_BUTTON_WIDTH
     local buttonHeight = C.THEME_ASSIGNMENT_BUTTON_HEIGHT
@@ -1453,8 +1453,8 @@ function MagicSorterDialogs.ThemeAssignment_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_ThemeAssignment
----@param hidden boolean
+--- @param control MagicSorter_ThemeAssignment
+--- @param hidden boolean
 function MagicSorterDialogs.ThemeAssignment_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
@@ -1462,31 +1462,31 @@ function MagicSorterDialogs.ThemeAssignment_OnEffectivelyShown(control, hidden)
     control:Refresh()
 end
 
----@param control MagicSorter_ThemeAssignment
----@param hidden boolean
+--- @param control MagicSorter_ThemeAssignment
+--- @param hidden boolean
 function MagicSorterDialogs.ThemeAssignment_OnEffectivelyHidden(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:Stop()
     end
 end
 
----@param control MagicSorter_ThemeAssignment
+--- @param control MagicSorter_ThemeAssignment
 function MagicSorterDialogs.ThemeAssignment_OnResizeStop(control)
     MAGIC_SORTER:OnDialogMoved(control)
     control:Refresh()
 end
 
----@param control ScrollControl
+--- @param control ScrollControl
 function MagicSorterDialogs.ThemeScrollPanel_OnInitialized(control)
     control:GetOwningWindow().scrollPanel = control
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.ThemeScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetOwningWindow().scrollSlider
     local value = slider:GetValue()
@@ -1496,42 +1496,42 @@ function MagicSorterDialogs.ThemeScrollPanel_OnMouseWheel(control, delta, ctrl, 
     slider:SetValue(value - (delta * C.THEME_ASSIGNMENT_SCROLL_MULTIPLIER))
 end
 
----@param control Control
+--- @param control Control
 function MagicSorterDialogs.ThemeScrollContents_OnInitialized(control)
     control:GetOwningWindow().scrollContents = control
 end
 
----@param control SliderControl
+--- @param control SliderControl
 function MagicSorterDialogs.ThemeScrollSlider_OnInitialized(control)
     control:GetOwningWindow().scrollSlider = control
     control:SetValue(C.SCROLL_SLIDER_DEFAULT_VALUE)
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.ThemeScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetOwningWindow().scrollPanel:SetVerticalScroll(value)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.ThemeAssignmentSaveButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     MAGIC_SORTER:SetDialogHidden("ThemeAssignment", true)
     MAGIC_SORTER:SetDialogHidden("CategoryAssignment", false)
 end
 
----@param control MagicSorter_CenterLabel
+--- @param control MagicSorter_CenterLabel
 function MagicSorterDialogs.ThemeAssignmentCountLabel_OnInitialized(control)
     control:GetOwningWindow().countLabel = control:GetNamedChild("Label")
 end
 
 -- Disclaimer Dialog
----@param control MagicSorter_Disclaimer
+--- @param control MagicSorter_Disclaimer
 function MagicSorterDialogs.Disclaimer_OnInitialized(control)
     control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
@@ -1546,8 +1546,8 @@ function MagicSorterDialogs.Disclaimer_OnInitialized(control)
     body:GetNamedChild("StartFullSort").tooltip = "Performs a thorough sort of all of your storage homes."
 end
 
----@param control MagicSorter_Disclaimer
----@param hidden boolean
+--- @param control MagicSorter_Disclaimer
+--- @param hidden boolean
 function MagicSorterDialogs.Disclaimer_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
@@ -1555,16 +1555,16 @@ function MagicSorterDialogs.Disclaimer_OnEffectivelyShown(control, hidden)
     zo_callLater(function () MAGIC_SORTER:SetUIMode(true) end, C.DISCLAIMER_UI_MODE_DELAY_MS)
 end
 
----@param control MagicSorter_Disclaimer
----@param hidden boolean
+--- @param control MagicSorter_Disclaimer
+--- @param hidden boolean
 function MagicSorterDialogs.Disclaimer_OnEffectivelyHidden(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:Stop()
     end
 end
 
----@param control MagicSorter_OptionButton
----@param hidden boolean
+--- @param control MagicSorter_OptionButton
+--- @param hidden boolean
 function MagicSorterDialogs.DisclaimerManageLayout_OnEffectivelyShown(control, hidden)
     control.onToggled = function (self)
         if MAGIC_SORTER then
@@ -1580,47 +1580,47 @@ function MagicSorterDialogs.DisclaimerManageLayout_OnEffectivelyShown(control, h
     control:Toggle(MAGIC_SORTER:IsOrganizationEnabled())
 end
 
----@param control Control
+--- @param control Control
 function MagicSorterDialogs.DisclaimerManageLayout_OnMouseEnter(control)
     ZO_Tooltips_ShowTextTooltip(control, RIGHT, "When this option is enabled your stored furnishings will automatically be placed neatly in stacks.\n\n" ..
         "Disable this option if you would prefer to organize your stored furnishings manually; when this option is disabled all furnishings will " ..
         "be placed in a single stack.")
 end
 
----@param control Control
+--- @param control Control
 function MagicSorterDialogs.DisclaimerManageLayout_OnMouseExit(control)
     ZO_Tooltips_HideTextTooltip()
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.DisclaimerBackButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     MAGIC_SORTER:SetDialogHidden("Disclaimer", true)
     MAGIC_SORTER:SetDialogHidden("CategoryAssignment", false)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.DisclaimerStartQuickSort_OnMouseDown(control, button, ctrl, alt, shift, command)
     MAGIC_SORTER:SetQuickSortMode(true)
     MAGIC_SORTER:SetDialogHidden("Disclaimer", true)
     MAGIC_SORTER:SetDialogHidden("StorageProgress", false)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.DisclaimerStartFullSort_OnMouseDown(control, button, ctrl, alt, shift, command)
     MAGIC_SORTER:SetQuickSortMode(false)
     MAGIC_SORTER:SetDialogHidden("Disclaimer", true)
@@ -1628,7 +1628,7 @@ function MagicSorterDialogs.DisclaimerStartFullSort_OnMouseDown(control, button,
 end
 
 -- Storage Progress Dialog
----@param control MagicSorter_StorageProgress
+--- @param control MagicSorter_StorageProgress
 function MagicSorterDialogs.StorageProgress_OnInitialized(control)
     control.statusDetailRows = {}
     control.Refresh = function ()
@@ -1680,8 +1680,8 @@ function MagicSorterDialogs.StorageProgress_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_StorageProgress
----@param hidden boolean
+--- @param control MagicSorter_StorageProgress
+--- @param hidden boolean
 function MagicSorterDialogs.StorageProgress_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
@@ -1691,8 +1691,8 @@ function MagicSorterDialogs.StorageProgress_OnEffectivelyShown(control, hidden)
     end
 end
 
----@param control MagicSorter_StorageProgress
----@param hidden boolean
+--- @param control MagicSorter_StorageProgress
+--- @param hidden boolean
 function MagicSorterDialogs.StorageProgress_OnEffectivelyHidden(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:Stop()
@@ -1700,7 +1700,7 @@ function MagicSorterDialogs.StorageProgress_OnEffectivelyHidden(control, hidden)
     MagicSorter_StorageProgressDetail:SetHidden(true)
 end
 
----@param control MagicSorter_CenterSubtitle
+--- @param control MagicSorter_CenterSubtitle
 function MagicSorterDialogs.StorageProgressStatus_OnInitialized(control)
     local label = control:GetNamedChild("Label")
     label:SetMaxLineCount(2)
@@ -1708,17 +1708,17 @@ function MagicSorterDialogs.StorageProgressStatus_OnInitialized(control)
     control:GetOwningWindow().statusLabel = label
 end
 
----@param control LabelControl
+--- @param control LabelControl
 function MagicSorterDialogs.StorageProgressActiveWarning_OnInitialized(control)
     control:GetOwningWindow().activeWarning = control
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.StorageProgressSuspendButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     if MAGIC_SORTER:IsAutomaticStorageRunning() then
         MAGIC_SORTER:SuspendAutomaticStorage()
@@ -1727,12 +1727,12 @@ function MagicSorterDialogs.StorageProgressSuspendButton_OnMouseDown(control, bu
     end
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.StorageProgressCancelButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     if MAGIC_SORTER:IsAutomaticStorageRunning() then
         MAGIC_SORTER:CancelAutomaticStorage()
@@ -1740,28 +1740,28 @@ function MagicSorterDialogs.StorageProgressCancelButton_OnMouseDown(control, but
     MAGIC_SORTER:SetDialogHidden("StorageProgress", true)
 end
 
----@param control LabelControl
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control LabelControl
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.StorageProgressShowDetailsButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     control:GetOwningWindow():OnExpandCollapseDetails()
 end
 
----@param control LabelControl
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control LabelControl
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.StorageProgressHideDetailsButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     control:GetOwningWindow():OnExpandCollapseDetails()
 end
 
 -- Storage Progress Detail Dialog
----@param control MagicSorter_StorageProgressDetail
+--- @param control MagicSorter_StorageProgressDetail
 function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
     control.previousHouseIndex = nil
     control.statusDetailRows = {}
@@ -1793,7 +1793,7 @@ function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
     headerRow:SetCapacity("Traditional/\nSpecial Slots")
     headerRow:SetStatus("Pending Items\nOutbound/Inbound")
     headerRow:SetHeaderRow()
-    ---@diagnostic disable-next-line: missing-parameter
+    --- @diagnostic disable-next-line: missing-parameter
     headerRow:SetAnchor(TOPLEFT)
     headerRow:SetHidden(false)
     control.RefreshStatusDetail = function ()
@@ -1889,12 +1889,12 @@ function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
     end
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.DetailScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("DetailScrollSlider")
     local value = slider:GetValue()
@@ -1904,19 +1904,19 @@ function MagicSorterDialogs.DetailScrollPanel_OnMouseWheel(control, delta, ctrl,
     slider:SetValue(value - (delta * C.STORAGE_PROGRESS_DETAIL_SCROLL_MULTIPLIER))
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.DetailScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetParent():GetNamedChild("DetailScrollPanel"):SetVerticalScroll(value)
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.LogScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("LogScrollSlider")
     local value = slider:GetValue()
@@ -1926,15 +1926,15 @@ function MagicSorterDialogs.LogScrollPanel_OnMouseWheel(control, delta, ctrl, al
     slider:SetValue(value - (delta * C.STORAGE_PROGRESS_DETAIL_SCROLL_MULTIPLIER))
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.LogScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetParent():GetNamedChild("LogScrollPanel"):SetVerticalScroll(value)
 end
 
 -- Complete Dialog
----@param control MagicSorter_Complete
+--- @param control MagicSorter_Complete
 function MagicSorterDialogs.Complete_OnInitialized(control)
     control.backdropAnimation = animationManager:CreateTimelineFromVirtual("MagicSorter_TopLevelBackdropAnimation", control)
     if not control:IsHidden() then
@@ -1957,8 +1957,8 @@ function MagicSorterDialogs.Complete_OnInitialized(control)
     end
 end
 
----@param control MagicSorter_Complete
----@param hidden boolean
+--- @param control MagicSorter_Complete
+--- @param hidden boolean
 function MagicSorterDialogs.Complete_OnEffectivelyShown(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:PlayFromStart()
@@ -1966,20 +1966,20 @@ function MagicSorterDialogs.Complete_OnEffectivelyShown(control, hidden)
     control:Refresh()
 end
 
----@param control MagicSorter_Complete
----@param hidden boolean
+--- @param control MagicSorter_Complete
+--- @param hidden boolean
 function MagicSorterDialogs.Complete_OnEffectivelyHidden(control, hidden)
     if control.backdropAnimation then
         control.backdropAnimation:Stop()
     end
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.CompleteScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("ScrollSlider")
     local value = slider:GetValue()
@@ -1989,19 +1989,19 @@ function MagicSorterDialogs.CompleteScrollPanel_OnMouseWheel(control, delta, ctr
     slider:SetValue(value - (delta * C.COMPLETE_DIALOG_SCROLL_MULTIPLIER))
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.CompleteScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetParent():GetNamedChild("ScrollPanel"):SetVerticalScroll(value)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.CompleteCloseButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     eventManager:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "AutoReload")
     MAGIC_SORTER:SetDialogHidden("Complete", true)
@@ -2009,7 +2009,7 @@ function MagicSorterDialogs.CompleteCloseButton_OnMouseDown(control, button, ctr
 end
 
 -- Report Summary Dialog
----@param control MagicSorter_ReportSummary
+--- @param control MagicSorter_ReportSummary
 function MagicSorterDialogs.ReportSummary_OnInitialized(control)
     control.panel = control:GetNamedChild("ScrollContainerScrollPanel")
     control.slider = control:GetNamedChild("ScrollContainerScrollSlider")
@@ -2020,12 +2020,12 @@ function MagicSorterDialogs.ReportSummary_OnInitialized(control)
     control.hideShowButton.nextState = "hide"
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.ReportSummaryScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("ScrollSlider")
     local value = slider:GetValue()
@@ -2035,19 +2035,19 @@ function MagicSorterDialogs.ReportSummaryScrollPanel_OnMouseWheel(control, delta
     slider:SetValue(value - (delta * C.REPORT_SUMMARY_SCROLL_MULTIPLIER))
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.ReportSummaryScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetParent():GetNamedChild("ScrollPanel"):SetVerticalScroll(value)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.ReportSummaryHideShowButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     local window = control:GetOwningWindow()
     local scroll = window:GetNamedChild("ScrollContainer")
@@ -2067,7 +2067,7 @@ function MagicSorterDialogs.ReportSummaryHideShowButton_OnMouseDown(control, but
 end
 
 -- Report Inventory Dialog
----@param control MagicSorter_ReportInventory
+--- @param control MagicSorter_ReportInventory
 function MagicSorterDialogs.ReportInventory_OnInitialized(control)
     control.caption = control:GetNamedChild("Caption")
     control.panel = control:GetNamedChild("ScrollContainerScrollPanel")
@@ -2100,12 +2100,12 @@ function MagicSorterDialogs.ReportInventory_OnInitialized(control)
     end
 end
 
----@param control ScrollControl
----@param delta number
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control ScrollControl
+--- @param delta number
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.ReportInventoryScrollPanel_OnMouseWheel(control, delta, ctrl, alt, shift, command)
     local slider = control:GetParent():GetNamedChild("ScrollSlider")
     local value = slider:GetValue()
@@ -2115,19 +2115,19 @@ function MagicSorterDialogs.ReportInventoryScrollPanel_OnMouseWheel(control, del
     slider:SetValue(value - (delta * C.REPORT_INVENTORY_SCROLL_MULTIPLIER))
 end
 
----@param control SliderControl
----@param value number
----@param eventReason number
+--- @param control SliderControl
+--- @param value number
+--- @param eventReason number
 function MagicSorterDialogs.ReportInventoryScrollSlider_OnValueChanged(control, value, eventReason)
     control:GetParent():GetNamedChild("ScrollPanel"):SetVerticalScroll(value)
 end
 
----@param control MagicSorter_Button
----@param button MouseButtonIndex
----@param ctrl boolean
----@param alt boolean
----@param shift boolean
----@param command boolean
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
 function MagicSorterDialogs.ReportInventoryCloseButton_OnMouseDown(control, button, ctrl, alt, shift, command)
     MAGIC_SORTER:SetDialogHidden("ReportInventory", true)
 end

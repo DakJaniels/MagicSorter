@@ -1,4 +1,4 @@
----@class MSorter : ZO_InitializingObject
+--- @class MSorter : ZO_InitializingObject
 local MSorter = ZO_InitializingObject:Subclass()
 
 EVENT_MANAGER:RegisterForEvent("MagicSorter", EVENT_ADD_ONS_LOADED, function (event)
@@ -140,6 +140,7 @@ function MSorter:InitializeKeybinds()
         function KEYBINDINGS_MANAGER:IsChordingAlwaysEnabled()
             return true
         end
+
         ZO_CreateStringId("SI_BINDING_NAME_" .. self.KeybindId, "Magic Sorter")
         self:CreateKeybind(self.KeybindId, KEY_F10, 0, 0, 0, 0)
     end
@@ -384,11 +385,11 @@ function MSorter:StartStorageWizard()
 end
 
 function MSorter:OnDialogMoved(control)
-    --self:SaveDialogSettings(control)
+    -- self:SaveDialogSettings(control)
 end
 
 function MSorter:OnDialogShow(control)
-    --self:RestoreDialogSettings(control)
+    -- self:RestoreDialogSettings(control)
 end
 
 function MSorter:OnSettingsChanged()
@@ -557,18 +558,19 @@ function MSorter:AddFurnitureCategory(categoryId, parentCategoryId, parentCatego
         if category then
             return category
         else
-            category = { 
-                id = categoryId, 
-                parentId = 0, 
-                name = "Needs Categorization", 
-                displayName = "Needs Categorization", 
-                assignedHouseIds = {} 
+            category =
+            {
+                id = categoryId,
+                parentId = 0,
+                name = "Needs Categorization",
+                displayName = "Needs Categorization",
+                assignedHouseIds = {}
             }
             self.furnitureCategories[categoryId] = category
             return category
         end
     end
-    
+
     -- Ignore the master "Furniture" category.
     if categoryId and categoryId ~= 0 and categoryId ~= 1 then
         local category = self.furnitureCategories[categoryId]
@@ -602,7 +604,7 @@ function MSorter:GetFurnitureCategories()
         self.furnitureCategories = {}
         -- Add "Needs Categorization" fake category first
         self:AddFurnitureCategory(self.FURNITURE_NEEDS_CATEGORIZATION_CATEGORY_ID)
-        
+
         local numCategories = GetNumFurnitureCategories()
         for categoryIndex = 1, numCategories do
             local categoryId = GetFurnitureCategoryId(categoryIndex)

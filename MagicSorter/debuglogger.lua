@@ -1,16 +1,16 @@
----@class MDebugLogger
+--- @class MDebugLogger
 local MDebugLogger = {}
 
----@class NOP
----@field Debug fun(self: NOP, message: string, ...: any)
----@field Info fun(self: NOP, message: string, ...: any)
----@field Warn fun(self: NOP, message: string, ...: any)
----@field Error fun(self: NOP, message: string, ...: any)
+--- @class NOP
+--- @field Debug fun(self: NOP, message: string, ...: any)
+--- @field Info fun(self: NOP, message: string, ...: any)
+--- @field Warn fun(self: NOP, message: string, ...: any)
+--- @field Error fun(self: NOP, message: string, ...: any)
 local NOP = {}
 
 --- Debug logger function that falls back to df()
----@param message string The message to log
----@param ... any Additional values to format into message
+--- @param message string The message to log
+--- @param ... any Additional values to format into message
 function NOP:Debug(message, ...)
     if select("#", ...) > 0 then
         df(message, ...)
@@ -20,8 +20,8 @@ function NOP:Debug(message, ...)
 end
 
 --- Info logger function that falls back to df()
----@param message string The message to log
----@param ... any Additional values to format into message
+--- @param message string The message to log
+--- @param ... any Additional values to format into message
 function NOP:Info(message, ...)
     if select("#", ...) > 0 then
         df(message, ...)
@@ -31,8 +31,8 @@ function NOP:Info(message, ...)
 end
 
 --- Warning logger function that falls back to df()
----@param message string The message to log
----@param ... any Additional values to format into message
+--- @param message string The message to log
+--- @param ... any Additional values to format into message
 function NOP:Warn(message, ...)
     if select("#", ...) > 0 then
         df(message, ...)
@@ -42,8 +42,8 @@ function NOP:Warn(message, ...)
 end
 
 --- Error logger function that falls back to df()
----@param message string The message to log
----@param ... any Additional values to format into message
+--- @param message string The message to log
+--- @param ... any Additional values to format into message
 function NOP:Error(message, ...)
     if select("#", ...) > 0 then
         df(message, ...)
@@ -259,7 +259,7 @@ function MDebugLogger:StripColorCodes(message)
     end
     -- Remove ESO color codes like |cff0000, |r, etc.
     return string.gsub(message, "|c[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]", "")
-        :gsub("|r", "")
+                 :gsub("|r", "")
 end
 
 MAGIC_SORTER_DEBUG_LOGGER = MDebugLogger

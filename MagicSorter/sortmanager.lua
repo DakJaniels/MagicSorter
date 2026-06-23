@@ -1,4 +1,4 @@
----@class MSortManager : ZO_InitializingObject
+--- @class MSortManager : ZO_InitializingObject
 local MSortManager = ZO_InitializingObject:Subclass()
 
 local function Rotate2D(x, y, angle)
@@ -6,8 +6,12 @@ local function Rotate2D(x, y, angle)
     return y * sine + x * cosine, y * cosine - x * sine
 end
 
+---
+--- @param dataManager any
+--- @return MSortManager
 function InstantiateMagicSortManager(dataManager)
-    return MSortManager:New(dataManager)
+    local manager = MSortManager:New(dataManager)
+    return manager
 end
 
 function MSortManager:SetDebugEnabled(enabled)
