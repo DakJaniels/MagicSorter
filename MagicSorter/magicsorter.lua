@@ -1,7 +1,7 @@
 --- @class MSorter : ZO_InitializingObject
 local MSorter = ZO_InitializingObject:Subclass()
 
-EVENT_MANAGER:RegisterForEvent("MagicSorter", EVENT_ADD_ONS_LOADED, function (event)
+EVENT_MANAGER:RegisterForEvent("MagicSorter", EVENT_ADD_ONS_LOADED, function(event)
     EVENT_MANAGER:UnregisterForEvent("MagicSorter", EVENT_ADD_ONS_LOADED)
     MAGIC_SORTER = MSorter:New()
 end)
@@ -30,7 +30,7 @@ function MSorter:InitializeStaticData()
             name = "Magic Sorter",
             keybind = "UI_SHORTCUT_REPORT_PLAYER",
             callback = GenerateFlatClosure(self.StartStorageWizard, self),
-            visible = function ()
+            visible = function()
                 return true
             end,
         },
@@ -73,7 +73,8 @@ end
 
 function MSorter:InitializeSavedVariables()
     if not self.Vars then
-        self.Vars = ZO_SavedVars:NewAccountWide(self.SavedVarsFilename, self.SavedVarsVersion, nil, self.SavedVarsDefaults)
+        self.Vars = ZO_SavedVars:NewAccountWide(self.SavedVarsFilename, self.SavedVarsVersion, nil,
+            self.SavedVarsDefaults)
         if not self.Vars.Config then
             self.Vars.Config = {}
         end
@@ -96,7 +97,9 @@ end
 function MSorter:InitializeEventHandlers()
     if not self.initializedEventHandlers then
         self.initializedEventHandlers = true
-        EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_PLAYER_ACTIVATED, GenerateClosure(self.OnPlayerActivated, self))
+        EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_PLAYER_ACTIVATED, function(...)
+            self:OnPlayerActivated(...)
+        end)
         local function OnSceneStateChange(oldState, newState)
             if newState == "shown" then
                 self:UpdateKeybindStrip(true)
@@ -130,7 +133,8 @@ function MSorter:InitializeEventHandlers()
         end
         EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_HOUSING_FURNITURE_PLACED, OnFurnitureChanged)
         EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_HOUSING_FURNITURE_REMOVED, OnFurnitureChanged)
-        EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_ACTIVITY_FINDER_STATUS_UPDATE, OnActivityFinderStatusUpdate)
+        EVENT_MANAGER:RegisterForEvent(self.EventDescriptor, EVENT_ACTIVITY_FINDER_STATUS_UPDATE,
+            OnActivityFinderStatusUpdate)
     end
 end
 
@@ -140,8 +144,6 @@ function MSorter:InitializeKeybinds()
         function KEYBINDINGS_MANAGER:IsChordingAlwaysEnabled()
             return true
         end
-
-        ZO_CreateStringId("SI_BINDING_NAME_" .. self.KeybindId, "Magic Sorter")
         self:CreateKeybind(self.KeybindId, KEY_F10, 0, 0, 0, 0)
     end
 end
@@ -190,7 +192,8 @@ function MSorter:CreateKeybind(binding, key, modifier1, modifier2, modifier3, mo
         end
     end
     if IsProtectedFunction("BindKeyToAction") then
-        CallSecureProtected("BindKeyToAction", layer, category, action, self.MinKeybind, key, modifier1, modifier2, modifier3, modifier4)
+        CallSecureProtected("BindKeyToAction", layer, category, action, self.MinKeybind, key, modifier1, modifier2,
+            modifier3, modifier4)
     else
         BindKeyToAction(layer, category, action, self.MinKeybind, key, modifier1, modifier2, modifier3, modifier4)
     end
@@ -475,11 +478,12 @@ function MSorter:GetOwnedHouses()
             local houseNameCleaned = ZO_CachedStrFormat("<<C:1>>", houseName)
             local _, _, houseIcon = GetCollectibleInfo(collectibleId)
             local houseImage = GetHousePreviewBackgroundImage(houseId)
-            local house = { collectibleId = collectibleId, houseId = houseId, houseName = houseNameCleaned, houseIcon = houseIcon, houseImage = houseImage, assignedCategoryIds = {}, assignedThemeIds = {} }
+            local house = { collectibleId = collectibleId, houseId = houseId, houseName = houseNameCleaned, houseIcon =
+            houseIcon, houseImage = houseImage, assignedCategoryIds = {}, assignedThemeIds = {} }
             table.insert(houses, house)
         end
     end
-    table.sort(houses, function (houseA, houseB)
+    table.sort(houses, function(houseA, houseB)
         return houseA.houseName < houseB.houseName
     end)
     return houses
@@ -584,7 +588,8 @@ function MSorter:AddFurnitureCategory(categoryId, parentCategoryId, parentCatego
             else
                 displayName = string.format("%s, All", categoryName)
             end
-            category = { id = categoryId, parentId = parentCategoryId or 0, name = categoryName, displayName = displayName, assignedHouseIds = {} }
+            category = { id = categoryId, parentId = parentCategoryId or 0, name = categoryName, displayName =
+            displayName, assignedHouseIds = {} }
             self.furnitureCategories[categoryId] = category
             return category
         end
@@ -680,7 +685,7 @@ function MSorter:GetHouseCategoryAssigmentsString(houseId)
     if houseCategories then
         local categoryIds = {}
         local categories = ZO_DeepTableCopy(houseCategories)
-        table.sort(categories, function (categoryA, categoryB)
+        table.sort(categories, function(categoryA, categoryB)
             return categoryA.parentId < categoryB.parentId
         end)
         for _, category in ipairs(categories) do
@@ -814,12 +819,12 @@ end
 ]]
 -- /script MagicSorter_ReportInventory:ShowReport( { { "Conservatory", "Boulders", "125" } } )
 
-SLASH_COMMANDS["/resetmagicsort"] = function ()
+SLASH_COMMANDS["/resetmagicsort"] = function()
     MAGIC_SORTER:GetConfig().dirty = false
     MAGIC_SORTER_DEBUG_LOGGER:Info("Quick Sort mode is now ready.")
 end
 
-SLASH_COMMANDS["/debugfurniture"] = function ()
+SLASH_COMMANDS["/debugfurniture"] = function()
     local houseId = MAGIC_SORTER:GetSortManager():GetHouseId()
     if houseId == 0 then
         MAGIC_SORTER_DEBUG_LOGGER:Warn("Not in a house.")
@@ -881,7 +886,8 @@ SLASH_COMMANDS["/debugfurniture"] = function ()
 
     MAGIC_SORTER:GetData().debugFurniture[houseId] = debugEntry
 
-    MAGIC_SORTER_DEBUG_LOGGER:Info("Debug: Dumped %d furniture items from %s (House ID: %d)", itemCount, houseName, houseId)
+    MAGIC_SORTER_DEBUG_LOGGER:Info("Debug: Dumped %d furniture items from %s (House ID: %d)", itemCount, houseName,
+        houseId)
     MAGIC_SORTER_DEBUG_LOGGER:Info("Data saved to saved variables.")
 
     local sortManager = MAGIC_SORTER:GetSortManager()
@@ -904,7 +910,7 @@ SLASH_COMMANDS["/debugfurniture"] = function ()
     MAGIC_SORTER_DEBUG_LOGGER:Info("Use /dumpfurniture to see detailed output")
 end
 
-SLASH_COMMANDS["/dumpfurniture"] = function ()
+SLASH_COMMANDS["/dumpfurniture"] = function()
     local houseId = MAGIC_SORTER:GetSortManager():GetHouseId()
     if houseId == 0 then
         MAGIC_SORTER_DEBUG_LOGGER:Warn("Not in a house.")
@@ -926,7 +932,7 @@ SLASH_COMMANDS["/dumpfurniture"] = function ()
     for key, count in pairs(entry.categoryCounts) do
         table.insert(sortedCategories, { key = key, count = count })
     end
-    table.sort(sortedCategories, function (a, b)
+    table.sort(sortedCategories, function(a, b)
         return a.count > b.count
     end)
 
@@ -939,7 +945,7 @@ SLASH_COMMANDS["/dumpfurniture"] = function ()
     for key, count in pairs(entry.subcategoryCounts) do
         table.insert(sortedSubcats, { key = key, count = count })
     end
-    table.sort(sortedSubcats, function (a, b)
+    table.sort(sortedSubcats, function(a, b)
         return a.count > b.count
     end)
 
@@ -950,7 +956,8 @@ SLASH_COMMANDS["/dumpfurniture"] = function ()
     MAGIC_SORTER_DEBUG_LOGGER:Info("--- First 20 Items ---")
     for i = 1, zo_min(20, #entry.furniture) do
         local item = entry.furniture[i]
-        MAGIC_SORTER_DEBUG_LOGGER:Info("  %s: %s / %s (cat:%d subcat:%d)", item.itemName, item.categoryName, item.subcategoryName, item.categoryId, item.subcategoryId)
+        MAGIC_SORTER_DEBUG_LOGGER:Info("  %s: %s / %s (cat:%d subcat:%d)", item.itemName, item.categoryName,
+            item.subcategoryName, item.categoryId, item.subcategoryId)
     end
 
     if #entry.furniture > 20 then
@@ -958,7 +965,7 @@ SLASH_COMMANDS["/dumpfurniture"] = function ()
     end
 end
 
-SLASH_COMMANDS["/debugcategories"] = function ()
+SLASH_COMMANDS["/debugcategories"] = function()
     local sortManager = MAGIC_SORTER:GetSortManager()
     -- Initialize configuration if needed
     if not sortManager.categories then
@@ -1041,10 +1048,10 @@ SLASH_COMMANDS["/debugcategories"] = function ()
     local testItems =
     {
         { categoryId = 12, subcategoryId = 152, themeId = 13, name = "Boulders and Large Rocks (Daedric)", },
-        { categoryId = 12, subcategoryId = 150, themeId = 13, name = "Giant Trees (Daedric)",              },
-        { categoryId = 12, subcategoryId = 149, themeId = 1,  name = "Ferns (Generic)",                    },
-        { categoryId = 13, subcategoryId = 185, themeId = 9,  name = "Buildings (Orc)",                    },
-        { categoryId = 25, subcategoryId = 31,  themeId = 0,  name = "Banking Assistants",                 },
+        { categoryId = 12, subcategoryId = 150, themeId = 13, name = "Giant Trees (Daedric)", },
+        { categoryId = 12, subcategoryId = 149, themeId = 1,  name = "Ferns (Generic)", },
+        { categoryId = 13, subcategoryId = 185, themeId = 9,  name = "Buildings (Orc)", },
+        { categoryId = 25, subcategoryId = 31,  themeId = 0,  name = "Banking Assistants", },
     }
 
     for _, testItem in ipairs(testItems) do
@@ -1056,10 +1063,12 @@ SLASH_COMMANDS["/debugcategories"] = function ()
             name = testItem.name,
         }
 
-        local placeable = sortManager:IsFurniturePlaceableInHouse(houseId, testItem.categoryId, testItem.subcategoryId, testItem.themeId)
+        local placeable = sortManager:IsFurniturePlaceableInHouse(houseId, testItem.categoryId, testItem.subcategoryId,
+            testItem.themeId)
         testResult.isPlaceableInHouse = placeable
 
-        local placeableAny = sortManager:IsFurniturePlaceableInAnyHouse(houseId, testItem.categoryId, testItem.subcategoryId, testItem.themeId)
+        local placeableAny = sortManager:IsFurniturePlaceableInAnyHouse(houseId, testItem.categoryId,
+            testItem.subcategoryId, testItem.themeId)
         testResult.isPlaceableInAnyHouse = placeableAny
 
         local targetHouses = sortManager:GetHousesByFurnitureCategoryAndTheme(testItem.subcategoryId, testItem.themeId)

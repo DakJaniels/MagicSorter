@@ -4,6 +4,7 @@
 
 - API update.
 - KEYBINDING_MANAGER -> KEYBINDINGS_MANAGER rename
+- Fix: default keybind now works. F10. Change in the Controls -> Keybindings section.
 
 ## [25] - 2025-11-14
 

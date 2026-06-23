@@ -1,0 +1,2 @@
+ZO_CreateStringId("SI_BINDING_NAME_MAGIC_SORTER", "Magic Sorter")
+SafeAddVersion("SI_BINDING_NAME_MAGIC_SORTER", 0)
