@@ -1,5 +1,9 @@
 # Changelog
 
+## [27] - 2026-06-24
+
+- Fix: swap usage of UI_SHORTCUT_REPORT_PLAYER to MAGIC_SORTER so keybind can show correctly.
+
 ## [26] - 2026-06-23
 
 - API update.

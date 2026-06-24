@@ -19,7 +19,7 @@ function MSorter:Initialize()
 end
 
 function MSorter:InitializeStaticData()
-    self.AddonVersion = 26
+    self.AddonVersion = 27
     self.AddonName = "MagicSorter"
     self.AddonDev = "Architectura"
     self.EventDescriptor = "magicsorter"
@@ -28,7 +28,7 @@ function MSorter:InitializeStaticData()
         alignment = KEYBIND_STRIP_ALIGN_CENTER,
         {
             name = "Magic Sorter",
-            keybind = "UI_SHORTCUT_REPORT_PLAYER",
+            keybind = "MAGIC_SORTER",
             callback = GenerateFlatClosure(self.StartStorageWizard, self),
             visible = function()
                 return true
