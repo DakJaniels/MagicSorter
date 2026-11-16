@@ -1722,13 +1722,31 @@
               <Anchor point="TOPLEFT"
                       relativeTo="$(parent)Message"
                       relativePoint="BOTTOM"
-                      offsetX="-320"
+                      offsetX="-400"
                       offsetY="30" />
               <Dimensions x="140"
                           y="140" />
               <OnEffectivelyShown>MagicSorterDialogs.DisclaimerManageLayout_OnEffectivelyShown(self, hidden)</OnEffectivelyShown>
               <OnMouseEnter>MagicSorterDialogs.DisclaimerManageLayout_OnMouseEnter(self)</OnMouseEnter>
               <OnMouseExit>MagicSorterDialogs.DisclaimerManageLayout_OnMouseExit(self)</OnMouseExit>
+            </Control>
+            <Control name="$(parent)TurnOffLights"
+                     hidden="false"
+                     inherits="MagicSorter_OptionButton"
+                     tier="NORMAL"
+                     layer="CONTROLS"
+                     level="1">
+              <Anchor point="LEFT"
+                      relativeTo="$(parent)ManageLayout"
+                      relativePoint="RIGHT"
+                      offsetX="20" />
+              <Dimensions x="140"
+                          y="140" />
+              <OnEffectivelyShown>MagicSorterDialogs.DisclaimerTurnOffLights_OnEffectivelyShown(self, hidden)</OnEffectivelyShown>
+              <OnEffectivelyHidden>MagicSorterDialogs.DisclaimerTurnOffLights_OnEffectivelyHidden(self, hidden)</OnEffectivelyHidden>
+              <OnMouseDown>MagicSorterDialogs.DisclaimerTurnOffLights_OnMouseDown(self, button, ctrl, alt, shift, command)</OnMouseDown>
+              <OnMouseEnter>MagicSorterDialogs.DisclaimerTurnOffLights_OnMouseEnter(self)</OnMouseEnter>
+              <OnMouseExit>MagicSorterDialogs.DisclaimerTurnOffLights_OnMouseExit(self)</OnMouseExit>
             </Control>
             <Control name="$(parent)UseFurnitureVault"
                      hidden="false"
@@ -1737,7 +1755,7 @@
                      layer="CONTROLS"
                      level="1">
               <Anchor point="LEFT"
-                      relativeTo="$(parent)ManageLayout"
+                      relativeTo="$(parent)TurnOffLights"
                       relativePoint="RIGHT"
                       offsetX="20" />
               <Dimensions x="140"

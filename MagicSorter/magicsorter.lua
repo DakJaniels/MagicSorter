@@ -505,6 +505,45 @@ function MSorter:IsVaultEnabled()
     return true == self:GetConfig().vaultEnabled
 end
 
+function MSorter:GetLightsMode()
+    local config = self:GetConfig()
+    if config.lightsMode == "off" or config.lightsMode == "on" or config.lightsMode == "none" then
+        return config.lightsMode
+    end
+    if config.lightsOffEnabled == true then
+        return "off"
+    end
+    return "none"
+end
+
+function MSorter:IsLightChangeEnabled()
+    return self:GetLightsMode() ~= "none"
+end
+
+function MSorter:SetLightsMode(lightsMode)
+    if lightsMode ~= "off" and lightsMode ~= "on" then
+        lightsMode = "none"
+    end
+    local config = self:GetConfig()
+    if config.lightsMode == lightsMode and config.lightsOffEnabled == nil then
+        return
+    end
+    config.lightsMode = lightsMode
+    config.lightsOffEnabled = nil
+    self:OnSettingsChanged()
+end
+
+function MSorter:CycleLightsMode()
+    local lightsMode = self:GetLightsMode()
+    if lightsMode == "none" then
+        self:SetLightsMode("off")
+    elseif lightsMode == "off" then
+        self:SetLightsMode("on")
+    else
+        self:SetLightsMode("none")
+    end
+end
+
 function MSorter:SetVaultThreshold(threshold)
     local clampedThreshold = zo_clamp(zo_floor(tonumber(threshold) or self.DefaultVaultThreshold), self.MinVaultThreshold, self.MaxVaultThreshold)
     local config = self:GetConfig()

@@ -61,12 +61,17 @@ function MSortManager:InitializeStaticData()
     self.SwapIntervalMS = 800
     self.MaxVaultRemovalAttempts = 3
     self.MaxVaultStageOverflow = 2
+    -- HousingEditorRequestChangeState index that turns a lamp off.
+    self.LightOffStateIndex = 1
+    self.lightsHandledFurnitureIds = {}
+    self.lightsFinishedHouseIds = {}
 
     self.EventDescriptors =
     {
         ["JUMP"] = dataManager.EventDescriptor .. "JumpToHouse",
         ["SWAP"] = dataManager.EventDescriptor .. "Swap",
         ["ORGANIZE"] = dataManager.EventDescriptor .. "OrganizeFurniture",
+        ["LIGHTS"] = dataManager.EventDescriptor .. "LightsOff",
     }
 
     self.EventTypes =
@@ -102,6 +107,15 @@ function MSortManager:InitializeStaticData()
         {
             ["ORGANIZE"] = "Organizing furniture storage...",
             ["ORGANIZE_PERCENT"] = "Organizing furniture storage (%d%%)...",
+        },
+        ["LIGHTS"] =
+        {
+            ["OFF"] = "Turned off %s",
+            ["ON"] = "Turned on %s",
+            ["REMAINING_OFF"] = "Turning off lights, %s left",
+            ["REMAINING_ON"] = "Turning on lights, %s left",
+            ["LAST_OFF"] = "Turning off the last light...",
+            ["LAST_ON"] = "Turning on the last light...",
         },
     }
 
@@ -495,6 +509,10 @@ function MSortManager:OnStateChanged(eventType, event, ...)
         if event == "ORGANIZE_PERCENT" then
             suppressLogAction = true
         end
+    elseif eventType == "LIGHTS" then
+        if event == "REMAINING_OFF" or event == "REMAINING_ON" or event == "LAST_OFF" or event == "LAST_ON" then
+            suppressLogAction = true
+        end
     end
     local eventMessage = self:GetEventTypeString(eventType, event, ...)
     if not suppressLogAction then
@@ -544,10 +562,100 @@ function MSortManager:ProcessPlayerActivated()
     end
 end
 
-function MSortManager:OnFurnitureChanged(...)
+function MSortManager:OnFurnitureChanged(eventCode, furnitureId)
     if not self:CheckState() then
         self:ClearState()
+        return
     end
+    if eventCode == EVENT_HOUSING_FURNITURE_PLACED then
+        self:TurnOffPlacedLight(furnitureId)
+    end
+end
+
+-- The placement event fires once that housing request has finished, so the light the sort just placed can be
+-- switched off here without spending the next queue tick on it. Lights already in the house use TurnOffOneLight.
+function MSortManager:VariationNameMatches(variationName, wholeNames, spacedPhrases)
+    if not variationName or variationName == "" then
+        return false
+    end
+    local trimmedName = variationName:match("^%s*(.-)%s*$")
+    local lowerName = string.lower(trimmedName)
+    if wholeNames[lowerName] or wholeNames[trimmedName] then
+        return true
+    end
+    for phraseIndex = 1, #spacedPhrases do
+        if string.find(lowerName, spacedPhrases[phraseIndex], 1, true) then
+            return true
+        end
+    end
+    return false
+end
+
+function MSortManager:IsLightOffVariationName(variationName)
+    return self:VariationNameMatches(variationName, {
+        ["off"] = true,
+        ["aus"] = true,
+        ["non"] = true,
+        ["apagado"] = true,
+        ["неактивно"] = true,
+        ["关"] = true,
+        ["オフ"] = true,
+    }, { " off", " down", " inactive", " close" })
+end
+
+function MSortManager:IsLightOnVariationName(variationName)
+    return self:VariationNameMatches(variationName, {
+        ["on"] = true,
+        ["ein"] = true,
+        ["oui"] = true,
+        ["encendido"] = true,
+        ["активно"] = true,
+        ["开"] = true,
+        ["オン"] = true,
+    }, { " on", " up", " active", " open" })
+end
+
+function MSortManager:GetLightStateIndex(furnitureId)
+    local lightsMode = self:GetDataManager():GetLightsMode()
+    local numStates = GetPlacedHousingFurnitureNumObjectStates(furnitureId)
+    for variationIndex = 1, numStates do
+        local variationName = GetPlacedFurniturePreviewVariationDisplayName(furnitureId, variationIndex)
+        local nameMatches = (lightsMode == "on" and self:IsLightOnVariationName(variationName)) or (lightsMode ~= "on" and self:IsLightOffVariationName(variationName))
+        if nameMatches then
+            return variationIndex - 1
+        end
+    end
+    if lightsMode == "on" then
+        return 0
+    end
+    return self.LightOffStateIndex
+end
+
+function MSortManager:TurnOffPlacedLight(furnitureId)
+    if not furnitureId or not self:GetDataManager():IsLightChangeEnabled() then
+        return
+    end
+    if self.skipNextPlacedLightOff then
+        self.skipNextPlacedLightOff = false
+        return
+    end
+    local furnitureIdString = Id64ToString(furnitureId)
+    if self.lightsHandledFurnitureIds[furnitureIdString] then
+        return
+    end
+    local categoryId, subcategoryId = self:GetFurnitureCategoryByFurnitureId(furnitureId)
+    if not self:IsLightingFurniture(categoryId, subcategoryId) or GetPlacedHousingFurnitureNumObjectStates(furnitureId) <= 1 then
+        return
+    end
+    local result = HousingEditorRequestChangeState(furnitureId, self:GetLightStateIndex(furnitureId))
+    if result ~= HOUSING_REQUEST_RESULT_SUCCESS then
+        self:WriteDebug("Could not turn off placed light (result %s).", tostring(result))
+        return
+    end
+    self.lightsHandledFurnitureIds[furnitureIdString] = true
+    local itemName = GetPlacedHousingFurnitureInfo(furnitureId)
+    local lightsEvent = self:GetDataManager():GetLightsMode() == "on" and "ON" or "OFF"
+    self:OnStateChanged("LIGHTS", lightsEvent, itemName or "light")
 end
 
 function MSortManager:Start(resume)
@@ -559,6 +667,7 @@ function MSortManager:Start(resume)
         else
             self:ClearState()
             self:ResetVaultState()
+            self:ResetLightsState()
             self.actionLog = {}
             if self:GetDataManager():IsQuickSortMode() then
                 precalc = true
@@ -720,6 +829,7 @@ function MSortManager:Complete()
 
     self:GetDataManager():OnSortCompleted(report)
     self:ResetVaultState()
+    self:ResetLightsState()
     self:OnStateChanged("STATE", "COMPLETE")
 end
 
@@ -1335,6 +1445,14 @@ function MSortManager:GetNextHouse()
             targetHouse = visitedRemovableHouse
         end
     end
+    if not targetHouse and self:GetDataManager():IsLightChangeEnabled() then
+        local currentHouseId = self:GetHouseId()
+        for _, house in ipairs(self.houseList) do
+            if house.houseId ~= currentHouseId and not self.lightsFinishedHouseIds[house.houseId] then
+                return house
+            end
+        end
+    end
     return targetHouse
 end
 
@@ -1484,6 +1602,131 @@ function MSortManager:OrganizeFurniture()
     EVENT_MANAGER:RegisterForUpdate(self.EventDescriptors["ORGANIZE"], 130, GenerateFlatClosure(self.OnOrganizeFurniture, self))
 end
 
+function MSortManager:ResetLightsState()
+    self.lightsHandledFurnitureIds = {}
+    self.lightsFinishedHouseIds = {}
+    self.lightingCategoryId = nil
+    self.skipNextPlacedLightOff = false
+end
+
+-- Furniture category names for string table 11547061 index 11, one per supported client language.
+function MSortManager:GetLightingCategoryId()
+    if self.lightingCategoryId ~= nil then
+        return self.lightingCategoryId or nil
+    end
+    local lightingCategoryNames =
+    {
+        ["Lighting"] = true,
+        ["Beleuchtung"] = true,
+        ["Luminaire"] = true,
+        ["Освещение"] = true,
+        ["照明"] = true,
+    }
+    local categories = self:GetDataManager():GetFurnitureCategories()
+    for _, category in pairs(categories) do
+        if category.parentId == 0 and lightingCategoryNames[category.name] then
+            self.lightingCategoryId = category.id
+            return category.id
+        end
+    end
+    self.lightingCategoryId = false
+    return nil
+end
+
+function MSortManager:IsLightingFurniture(categoryId, subcategoryId)
+    local lightingCategoryId = self:GetLightingCategoryId()
+    if not lightingCategoryId then
+        return false
+    end
+    if categoryId == lightingCategoryId or subcategoryId == lightingCategoryId then
+        return true
+    end
+    local dataManager = self:GetDataManager()
+    local category = dataManager:GetFurnitureCategory(categoryId)
+    if category and category.parentId == lightingCategoryId then
+        return true
+    end
+    local subcategory = dataManager:GetFurnitureCategory(subcategoryId)
+    if subcategory and subcategory.parentId == lightingCategoryId then
+        return true
+    end
+    return false
+end
+
+function MSortManager:GetLightsToTurnOff()
+    local lights = {}
+    if not self:GetDataManager():IsLightChangeEnabled() then
+        return lights
+    end
+    local furnitureId = GetNextPlacedHousingFurnitureId()
+    while furnitureId do
+        local furnitureIdString = Id64ToString(furnitureId)
+        if not self.lightsHandledFurnitureIds[furnitureIdString] then
+            local categoryId, subcategoryId = self:GetFurnitureCategoryByFurnitureId(furnitureId)
+            if self:IsLightingFurniture(categoryId, subcategoryId) and GetPlacedHousingFurnitureNumObjectStates(furnitureId) > 1 then
+                local itemName = GetPlacedHousingFurnitureInfo(furnitureId)
+                table.insert(lights, { furnitureId = furnitureIdString, name = itemName })
+            end
+        end
+        furnitureId = GetNextPlacedHousingFurnitureId(furnitureId)
+    end
+    return lights
+end
+
+function MSortManager:ContinueAfterLights()
+    local nextHouse = self:GetNextHouse()
+    if nextHouse then
+        self:SwapFurniture(nextHouse)
+        return
+    end
+    self:Complete()
+end
+
+function MSortManager:MarkLightsFinishedForCurrentHouse()
+    local houseId = self:GetHouseId()
+    if houseId and houseId ~= 0 then
+        self.lightsFinishedHouseIds[houseId] = true
+    end
+end
+
+function MSortManager:FinishHouse()
+    self:MarkLightsFinishedForCurrentHouse()
+    self:ContinueAfterLights()
+end
+
+-- Lights already in the house, one per swap tick, before the placement queue continues.
+function MSortManager:ShowLightsRemainingStatus(lightsRemaining)
+    local lightsModeSuffix = self:GetDataManager():GetLightsMode() == "on" and "ON" or "OFF"
+    if lightsRemaining <= 0 then
+        self:OnStateChanged("LIGHTS", "LAST_" .. lightsModeSuffix)
+        return
+    end
+    local secondsRemaining = zo_ceil(lightsRemaining * self.SwapIntervalMS / ZO_ONE_SECOND_IN_MILLISECONDS)
+    self:OnStateChanged("LIGHTS", "REMAINING_" .. lightsModeSuffix, ZO_FormatCountdownTimer(secondsRemaining))
+end
+
+function MSortManager:TurnOffOneLight()
+    if not self:GetDataManager():IsLightChangeEnabled() then
+        return false
+    end
+    local lights = self:GetLightsToTurnOff()
+    local light = lights[1]
+    if not light then
+        return false
+    end
+    local furnitureId = StringToId64(light.furnitureId)
+    local result = HousingEditorRequestChangeState(furnitureId, self:GetLightStateIndex(furnitureId))
+    self.lightsHandledFurnitureIds[light.furnitureId] = true
+    if result == HOUSING_REQUEST_RESULT_SUCCESS then
+        local lightsEvent = self:GetDataManager():GetLightsMode() == "on" and "ON" or "OFF"
+        self:OnStateChanged("LIGHTS", lightsEvent, light.name or "light")
+        self:ShowLightsRemainingStatus(#lights - 1)
+    else
+        self:WriteDebug("Could not turn off %s (result %s).", tostring(light.name), tostring(result))
+    end
+    return true
+end
+
 function MSortManager:OrganizeHouse(skipFurnitureOrganization, skipCurrentHouse)
     skipFurnitureOrganization = skipFurnitureOrganization == true
     skipCurrentHouse = skipCurrentHouse == true
@@ -1495,6 +1738,10 @@ function MSortManager:OrganizeHouse(skipFurnitureOrganization, skipCurrentHouse)
     local house = self:GetCurrentHouse()
     if not house then
         self:JumpToAnyHouse()
+        return
+    end
+    if self:GetDataManager():IsLightChangeEnabled() and #self:GetLightsToTurnOff() > 0 then
+        self:SwapFurniture(house)
         return
     end
     if not skipCurrentHouse then
@@ -1518,12 +1765,7 @@ function MSortManager:OrganizeHouse(skipFurnitureOrganization, skipCurrentHouse)
         zo_callLater(GenerateFlatClosure(self.OrganizeFurniture, self), 650)
         return
     end
-    local nextHouse = self:GetNextHouse()
-    if nextHouse then
-        self:SwapFurniture(nextHouse)
-        return
-    end
-    self:Complete()
+    self:FinishHouse()
 end
 
 function MSortManager:SwapFurniture(house)
@@ -1553,6 +1795,9 @@ function MSortManager:SwapAnyItem()
     end
     local numFreeSlots = GetNumBagFreeSlots(self.InventoryBag)
     local houseId = self:GetHouseId()
+    if self:TurnOffOneLight() then
+        return
+    end
     local removeList = self:GetOutboundFurnitureList()
 
     -- Vault-bound furniture placed in this house is put away into the Furniture Vault.
@@ -1755,6 +2000,7 @@ function MSortManager:PlaceFurniture(bagId, slotIndex, isStagingForVault)
     local itemId = GetItemId(bagId, slotIndex)
     local result = HousingEditorRequestItemPlacement(bagId, slotIndex, x, y, z, 0, yaw, 0)
     if result == HOUSING_REQUEST_RESULT_SUCCESS then
+        self.skipNextPlacedLightOff = isStagingForVault == true
         if bagId == BAG_FURNITURE_VAULT then
             self:InvalidateVaultSlots()
             self:OnStateChanged("SWAP", "FROM_VAULT", itemName)

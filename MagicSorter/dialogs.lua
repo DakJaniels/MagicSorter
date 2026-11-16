@@ -1596,6 +1596,79 @@ function MagicSorterDialogs.DisclaimerManageLayout_OnMouseExit(control)
     ZO_Tooltips_HideTextTooltip()
 end
 
+local function SetDisclaimerLightsFlicker(control, isEnabled)
+    local icon = control:GetNamedChild("Icon")
+    if isEnabled then
+        icon:SetDesaturation(0)
+        FLICKER_EFFECT:RegisterControl(icon, 0.6, 0.35, 0.2, 0, ZO_ColorDef:New(1, 1, 1, 1))
+    else
+        FLICKER_EFFECT:UnregisterControl(icon)
+        icon:SetVertexColors(VERTEX_POINTS_TOPLEFT, 1, 1, 1, 1)
+        icon:SetVertexColors(VERTEX_POINTS_TOPRIGHT, 1, 1, 1, 1)
+        icon:SetVertexColors(VERTEX_POINTS_BOTTOMLEFT, 1, 1, 1, 1)
+        icon:SetVertexColors(VERTEX_POINTS_BOTTOMRIGHT, 1, 1, 1, 1)
+    end
+end
+
+local function RefreshDisclaimerLightsButton(control)
+    local lightsMode = MAGIC_SORTER:GetLightsMode()
+    local label = control:GetNamedChild("Label")
+    if lightsMode == "on" then
+        label:SetText("Turn On Lights")
+    elseif lightsMode == "off" then
+        label:SetText("Turn Off Lights")
+    else
+        label:SetText("Leave Lights")
+    end
+    local isActive = lightsMode ~= "none"
+    if control:IsSelected() ~= isActive then
+        control:Toggle(isActive)
+    end
+    SetDisclaimerLightsFlicker(control, isActive)
+end
+
+--- @param control MagicSorter_OptionButton
+--- @param hidden boolean
+function MagicSorterDialogs.DisclaimerTurnOffLights_OnEffectivelyShown(control, hidden)
+    local icon = control:GetNamedChild("Icon")
+    icon:SetTexture("/esoui/art/icons/housing_coh_inc_candlecluster002.dds")
+    icon:SetDimensions(116, 116)
+    local label = control:GetNamedChild("Label")
+    label:SetFont("$(GAMEPAD_MEDIUM_FONT)|$(GP_20)")
+    RefreshDisclaimerLightsButton(control)
+end
+
+--- @param control MagicSorter_OptionButton
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
+function MagicSorterDialogs.DisclaimerTurnOffLights_OnMouseDown(control, button, ctrl, alt, shift, command)
+    if button ~= MOUSE_BUTTON_INDEX_LEFT then
+        return
+    end
+    MAGIC_SORTER:CycleLightsMode()
+    RefreshDisclaimerLightsButton(control)
+end
+
+--- @param control MagicSorter_OptionButton
+--- @param hidden boolean
+function MagicSorterDialogs.DisclaimerTurnOffLights_OnEffectivelyHidden(control, hidden)
+    SetDisclaimerLightsFlicker(control, false)
+end
+
+--- @param control Control
+function MagicSorterDialogs.DisclaimerTurnOffLights_OnMouseEnter(control)
+    ZO_Tooltips_ShowTextTooltip(control, RIGHT, "Click to cycle this tile: leave lights alone, turn them off, or turn them on.\n\n" ..
+        "While a storage home is sorted, Lighting furnishings are switched to that state before the home is arranged. This includes lights already placed in the home. Lights the sort places are switched as soon as that placement completes.")
+end
+
+--- @param control Control
+function MagicSorterDialogs.DisclaimerTurnOffLights_OnMouseExit(control)
+    ZO_Tooltips_HideTextTooltip()
+end
+
 --- @return string|nil reason
 local function GetFurnitureVaultUnavailableReason()
     if HOUSING_EDITOR_STATE:CanDepositIntoFurnitureVault() then

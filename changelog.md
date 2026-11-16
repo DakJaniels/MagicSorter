@@ -15,6 +15,8 @@
 - Fix: After a sort, the housing editor's Place list could show stale entries under "Uncategorized" until a UI reload. The list is now rebuilt the first time the housing editor furniture browser opens after a sort.
 - Fix: The Storage Houses tab stayed blank when a sort was started in the house being sorted. The tab now fills in as soon as the progress window opens, refreshes on a steady interval during the sort instead of being pushed back by every sort event, and refreshes immediately when the tab or "Show Details" is clicked.
 - Debug: Vault failures and the Retrieve To bag used for each removal are written to the debug log.
+- Feat: Optional lights tile on the "Before We Begin..." screen. Click cycles leave lights alone, turn them off, or turn them on. Lighting furnishings are switched while each storage home is sorted, before that home is arranged. Lights the sort places are switched when that placement completes. The state is taken from the variation name when that name says on or off (issue #1).
+- Feat: While lights already in a home are being switched off, the status line shows the estimated time remaining.
 
 ## [27] - 2026-06-24
 
