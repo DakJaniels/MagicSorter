@@ -42,6 +42,9 @@ function MSorter:InitializeStaticData()
     self.SavedVarsDefaults = { Data = { HouseCategories = {} } }
     self.SavedVarsFilename = "MagicSorter"
     self.SavedVarsVersion = 1
+    self.DefaultVaultThreshold = 4
+    self.MinVaultThreshold = 2
+    self.MaxVaultThreshold = 50
 
     self.InvalidParentCategoryIds =
     {
@@ -111,13 +114,22 @@ function MSorter:InitializeEventHandlers()
         if inventoryScene then
             inventoryScene:RegisterCallback("StateChange", OnSceneStateChange)
         end
+        local function OnHousingFurnitureSceneStateChange(oldState, newState)
+            if newState == SCENE_SHOWING then
+                local manager = self:GetSortManager()
+                if manager then
+                    manager:RefreshHousingFurnitureCaches()
+                end
+            end
+            OnSceneStateChange(oldState, newState)
+        end
         local keyboardHousingScene = SCENE_MANAGER:GetScene("keyboard_housing_furniture_scene")
         if keyboardHousingScene then
-            keyboardHousingScene:RegisterCallback("StateChange", OnSceneStateChange)
+            keyboardHousingScene:RegisterCallback("StateChange", OnHousingFurnitureSceneStateChange)
         end
         local gamepadHousingScene = SCENE_MANAGER:GetScene("gamepad_housing_furniture_scene")
         if gamepadHousingScene then
-            gamepadHousingScene:RegisterCallback("StateChange", OnSceneStateChange)
+            gamepadHousingScene:RegisterCallback("StateChange", OnHousingFurnitureSceneStateChange)
         end
         local function OnFurnitureChanged(...)
             local manager = self:GetSortManager()
@@ -479,6 +491,71 @@ function MSorter:IsOrganizationEnabled()
     else
         return enabled
     end
+end
+
+function MSorter:SetVaultEnabled(enabled)
+    local config = self:GetConfig()
+    if config.vaultEnabled ~= (true == enabled) then
+        config.vaultEnabled = true == enabled
+        self:OnSettingsChanged()
+    end
+end
+
+function MSorter:IsVaultEnabled()
+    return true == self:GetConfig().vaultEnabled
+end
+
+function MSorter:SetVaultThreshold(threshold)
+    local clampedThreshold = zo_clamp(zo_floor(tonumber(threshold) or self.DefaultVaultThreshold), self.MinVaultThreshold, self.MaxVaultThreshold)
+    local config = self:GetConfig()
+    if config.vaultThreshold ~= clampedThreshold then
+        config.vaultThreshold = clampedThreshold
+        self:OnSettingsChanged()
+    end
+end
+
+-- The player's own housing editor Retrieve To choice. HOUSING_EDITOR_SHARED:SetRetrieveToBag saves it the same way
+-- the housing editor's Retrieve To tab does. It is not changed while a sort runs, because the sort overrides it.
+function MSorter:GetRetrieveToBag()
+    return HOUSING_EDITOR_SHARED:GetRetrieveToBag()
+end
+
+function MSorter:GetRetrieveToBagDisplayName(bagId)
+    return ZO_HousingFurnitureRetrieveToBag:New(bagId):GetFormattedDisplayName(true)
+end
+
+---@param isReverse boolean|nil true to cycle to the previous bag instead of the next one
+function MSorter:CycleRetrieveToBag(isReverse)
+    if self:IsAutomaticStorageRunning() then
+        return false
+    end
+    local retrieveToBags = ZO_HOUSING_FURNITURE_RETRIEVE_TO_BAGS
+    local numRetrieveToBags = #retrieveToBags
+    local direction = isReverse and -1 or 1
+    local currentBagId = self:GetRetrieveToBag()
+    local currentIndex = isReverse and (numRetrieveToBags + 1) or 0
+    for bagIndex, bagId in ipairs(retrieveToBags) do
+        if bagId == currentBagId then
+            currentIndex = bagIndex
+            break
+        end
+    end
+    for offset = 1, numRetrieveToBags do
+        local nextBagId = retrieveToBags[((currentIndex - 1 + offset * direction) % numRetrieveToBags) + 1]
+        if ZO_HousingFurnitureRetrieveToBag:New(nextBagId):IsEnabled() then
+            if nextBagId ~= currentBagId then
+                HOUSING_EDITOR_SHARED:SetRetrieveToBag(nextBagId)
+                return true
+            end
+            return false
+        end
+    end
+    return false
+end
+
+function MSorter:GetVaultThreshold()
+    local threshold = tonumber(self:GetConfig().vaultThreshold) or self.DefaultVaultThreshold
+    return zo_clamp(threshold, self.MinVaultThreshold, self.MaxVaultThreshold)
 end
 
 function MSorter:GetOwnedHouses()

@@ -1719,9 +1719,10 @@
                      tier="NORMAL"
                      layer="CONTROLS"
                      level="1">
-              <Anchor point="TOP"
+              <Anchor point="TOPLEFT"
                       relativeTo="$(parent)Message"
                       relativePoint="BOTTOM"
+                      offsetX="-320"
                       offsetY="30" />
               <Dimensions x="140"
                           y="140" />
@@ -1729,22 +1730,93 @@
               <OnMouseEnter>MagicSorterDialogs.DisclaimerManageLayout_OnMouseEnter(self)</OnMouseEnter>
               <OnMouseExit>MagicSorterDialogs.DisclaimerManageLayout_OnMouseExit(self)</OnMouseExit>
             </Control>
-            <Control name="$(parent)BackButton"
+            <Control name="$(parent)UseFurnitureVault"
+                     hidden="false"
+                     inherits="MagicSorter_OptionButton"
+                     tier="NORMAL"
+                     layer="CONTROLS"
+                     level="1">
+              <Anchor point="LEFT"
+                      relativeTo="$(parent)ManageLayout"
+                      relativePoint="RIGHT"
+                      offsetX="20" />
+              <Dimensions x="140"
+                          y="140" />
+              <OnEffectivelyShown>MagicSorterDialogs.DisclaimerUseFurnitureVault_OnEffectivelyShown(self, hidden)</OnEffectivelyShown>
+              <OnMouseEnter>MagicSorterDialogs.DisclaimerUseFurnitureVault_OnMouseEnter(self)</OnMouseEnter>
+              <OnMouseExit>MagicSorterDialogs.DisclaimerUseFurnitureVault_OnMouseExit(self)</OnMouseExit>
+            </Control>
+            <Control name="$(parent)VaultThresholdDecrease"
                      inherits="MagicSorter_Button"
                      tier="NORMAL"
                      layer="CONTROLS"
                      level="1">
-              <OnMouseDown>MagicSorterDialogs.DisclaimerBackButton_OnMouseDown(self, button, ctrl, alt, shift, command)</OnMouseDown>
-              <Anchor point="BOTTOMRIGHT"
-                      relativeTo="$(parent)"
-                      relativePoint="BOTTOM"
-                      offsetX="-110"
-                      offsetY="-20" />
-              <Dimensions x="120"
-                          y="50" />
+              <OnMouseDown>MagicSorterDialogs.DisclaimerVaultThresholdDecrease_OnMouseDown(self, button, ctrl, alt, shift, command)</OnMouseDown>
+              <Anchor point="TOPLEFT"
+                      relativeTo="$(parent)UseFurnitureVault"
+                      relativePoint="TOPRIGHT"
+                      offsetX="20"
+                      offsetY="20" />
+              <Dimensions x="40"
+                          y="40" />
               <Controls>
                 <Label name="$(parent)Label"
-                       text="Back"
+                       text="|t16:16:/MagicSorter/media/arrow-left.dds|t"
+                       override="true" />
+              </Controls>
+            </Control>
+            <Label name="$(parent)VaultThresholdValue"
+                   mouseEnabled="true"
+                   color="ffffff"
+                   font="$(GAMEPAD_MEDIUM_FONT)|$(GP_25)|soft-shadow-thick"
+                   horizontalAlignment="CENTER"
+                   verticalAlignment="CENTER"
+                   tier="NORMAL"
+                   layer="CONTROLS"
+                   level="1">
+              <Anchor point="LEFT"
+                      relativeTo="$(parent)VaultThresholdDecrease"
+                      relativePoint="RIGHT"
+                      offsetX="5" />
+              <Dimensions x="230"
+                          y="40" />
+              <OnMouseEnter>MagicSorterDialogs.DisclaimerVaultThresholdValue_OnMouseEnter(self)</OnMouseEnter>
+              <OnMouseExit>MagicSorterDialogs.DisclaimerVaultThresholdValue_OnMouseExit(self)</OnMouseExit>
+            </Label>
+            <Control name="$(parent)VaultThresholdIncrease"
+                     inherits="MagicSorter_Button"
+                     tier="NORMAL"
+                     layer="CONTROLS"
+                     level="1">
+              <OnMouseDown>MagicSorterDialogs.DisclaimerVaultThresholdIncrease_OnMouseDown(self, button, ctrl, alt, shift, command)</OnMouseDown>
+              <Anchor point="LEFT"
+                      relativeTo="$(parent)VaultThresholdValue"
+                      relativePoint="RIGHT"
+                      offsetX="5" />
+              <Dimensions x="40"
+                          y="40" />
+              <Controls>
+                <Label name="$(parent)Label"
+                       text="|t16:16:/MagicSorter/media/arrow-right.dds|t"
+                       override="true" />
+              </Controls>
+            </Control>
+            <Control name="$(parent)RetrieveTo"
+                     inherits="MagicSorter_Button"
+                     tier="NORMAL"
+                     layer="CONTROLS"
+                     level="1">
+              <OnEffectivelyShown>MagicSorterDialogs.DisclaimerRetrieveTo_OnEffectivelyShown(self, hidden)</OnEffectivelyShown>
+              <OnMouseDown>MagicSorterDialogs.DisclaimerRetrieveTo_OnMouseDown(self, button, ctrl, alt, shift, command)</OnMouseDown>
+              <Anchor point="TOPLEFT"
+                      relativeTo="$(parent)VaultThresholdDecrease"
+                      relativePoint="BOTTOMLEFT"
+                      offsetY="20" />
+              <Dimensions x="320"
+                          y="40" />
+              <Controls>
+                <Label name="$(parent)Label"
+                       font="$(GAMEPAD_MEDIUM_FONT)|$(GP_22)|outline"
                        override="true" />
               </Controls>
             </Control>
@@ -1754,12 +1826,11 @@
                      layer="CONTROLS"
                      level="1">
               <OnMouseDown>MagicSorterDialogs.DisclaimerStartQuickSort_OnMouseDown(self, button, ctrl, alt, shift, command)</OnMouseDown>
-              <Anchor point="BOTTOMLEFT"
+              <Anchor point="BOTTOM"
                       relativeTo="$(parent)"
                       relativePoint="BOTTOM"
-                      offsetX="110"
-                      offsetY="-20" />
-              <Dimensions x="150"
+                      offsetY="-10" />
+              <Dimensions x="180"
                           y="50" />
               <Controls>
                 <Label name="$(parent)Label"
@@ -1776,12 +1847,30 @@
               <Anchor point="LEFT"
                       relativeTo="$(parent)StartQuickSort"
                       relativePoint="RIGHT"
-                      offsetX="10" />
-              <Dimensions x="150"
+                      offsetX="20" />
+              <Dimensions x="180"
                           y="50" />
               <Controls>
                 <Label name="$(parent)Label"
                        text="Start Full Sort"
+                       override="true" />
+              </Controls>
+            </Control>
+            <Control name="$(parent)BackButton"
+                     inherits="MagicSorter_Button"
+                     tier="NORMAL"
+                     layer="CONTROLS"
+                     level="1">
+              <OnMouseDown>MagicSorterDialogs.DisclaimerBackButton_OnMouseDown(self, button, ctrl, alt, shift, command)</OnMouseDown>
+              <Anchor point="RIGHT"
+                      relativeTo="$(parent)StartQuickSort"
+                      relativePoint="LEFT"
+                      offsetX="-20" />
+              <Dimensions x="180"
+                          y="50" />
+              <Controls>
+                <Label name="$(parent)Label"
+                       text="Back"
                        override="true" />
               </Controls>
             </Control>

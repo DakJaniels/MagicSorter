@@ -1,5 +1,21 @@
 # Changelog
 
+## [28] - 2026-11-16
+
+- Feat: Swap to using `KEYBINDINGS_MANAGER:SetChordingAlwaysEnabled(true)` instead of overriding method.
+- Feat: Dialog version label supports dual format. `28` shows "Version 28", `28100` shows "Version 28.1", `28105` shows "Version 28.1.5".
+- Fix: Housing editor "Retrieve To" is switched to Inventory while a sort runs and restored when the sort stops. Previously, if Retrieve To was set to the Furniture Vault, bank, or a storage chest, picked-up furniture went there instead of the inventory.
+- Fix: Off-by-one in the inventory slot loop when building the placeable furniture list.
+- Feat: Optional Furniture Vault mode on the "Before We Begin..." screen. Furnishings with at least the chosen number of copies (inventory + vault + storage homes) are stored in the Furniture Vault; furnishings below it are placed from the vault into their storage home. Requires ESO Plus and the Furnishing Vault collectible.
+- Feat: "Retrieve To" button on the "Before We Begin..." screen cycles through your available Retrieve To containers, so you don't have to open the housing editor to change it. Left-click goes to the next container, right-click to the previous one.
+- Feat: Storage house tooltips show Furniture Vault counts (to vault / from vault) when vault mode is on.
+- Feat: Reworked the "Before We Begin..." layout. The option tiles and the vault/Retrieve To settings are centered as one group, the threshold reads "Vault at N+ copies", and Back / Start Quick Sort / Start Full Sort are equal-width and centered.
+- Feat: Higher resolution icon for the "Use Furniture Vault" tile.
+- Fix: Furniture removed to the Furniture Vault could land in the inventory instead. Retrieve To is now left on the removal's destination until the next removal, instead of being switched back to Inventory immediately after the request.
+- Fix: After a sort, the housing editor's Place list could show stale entries under "Uncategorized" until a UI reload. The list is now rebuilt the first time the housing editor furniture browser opens after a sort.
+- Fix: The Storage Houses tab stayed blank when a sort was started in the house being sorted. The tab now fills in as soon as the progress window opens, refreshes on a steady interval during the sort instead of being pushed back by every sort event, and refreshes immediately when the tab or "Show Details" is clicked.
+- Debug: Vault failures and the Retrieve To bag used for each removal are written to the debug log.
+
 ## [27] - 2026-06-24
 
 - Fix: swap usage of UI_SHORTCUT_REPORT_PLAYER to MAGIC_SORTER so keybind can show correctly.

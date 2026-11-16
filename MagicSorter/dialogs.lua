@@ -698,6 +698,10 @@ function MagicSorterDialogs.StatusDetailRow_OnMouseEnter(control)
         local capacityTraditional = tostring(sortManager:GetHouseCapacity(control.houseId, HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM) or "Unknown")
         local capacitySpecial = tostring(sortManager:GetHouseCapacity(control.houseId, HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or "Unknown")
         local tooltip = string.format("|cffff00%s\n\n|cffffffAvailable Slots\nTraditional: |c00ffff%s|cffffff\nSpecial: |c00ffff%s|cffffff\n\nAssigned Categories:\n|c00ffff%s|cffffff", control.name or "", capacityTraditional, capacitySpecial, categories)
+        if sortManager:IsVaultModeActive() then
+            local toVaultCount, fromVaultCount = sortManager:GetHouseVaultCounts(control.houseId)
+            tooltip = string.format("%s\n\nFurniture Vault (|c00ffff%d+|cffffff copies)\nTo vault: |c00ffff%d|cffffff\nFrom vault: |c00ffff%d|cffffff", tooltip, sortManager:GetVaultThreshold(), toVaultCount, fromVaultCount)
+        end
         ZO_Tooltips_ShowTextTooltip(control, RIGHT, tooltip)
     end
 end
@@ -1592,6 +1596,129 @@ function MagicSorterDialogs.DisclaimerManageLayout_OnMouseExit(control)
     ZO_Tooltips_HideTextTooltip()
 end
 
+--- @return string|nil reason
+local function GetFurnitureVaultUnavailableReason()
+    if HOUSING_EDITOR_STATE:CanDepositIntoFurnitureVault() then
+        return nil
+    end
+    if not IsESOPlusSubscriber() then
+        return GetString(SI_FURNITURE_VAULT_ERROR_NEED_ESO_PLUS)
+    end
+    return GetString(SI_FURNITURE_VAULT_ERROR_NEED_COLLECTIBLE)
+end
+
+--- @param body Control
+local function RefreshDisclaimerVaultThreshold(body)
+    local valueLabel = body:GetNamedChild("VaultThresholdValue")
+    valueLabel:SetText(string.format("Vault at %d+ copies", MAGIC_SORTER:GetVaultThreshold()))
+    local isActive = MAGIC_SORTER:IsVaultEnabled() and GetFurnitureVaultUnavailableReason() == nil
+    valueLabel:SetAlpha(isActive and 1 or 0.4)
+    body:GetNamedChild("VaultThresholdDecrease"):SetAlpha(isActive and 1 or 0.4)
+    body:GetNamedChild("VaultThresholdIncrease"):SetAlpha(isActive and 1 or 0.4)
+end
+
+--- @param control MagicSorter_OptionButton
+--- @param hidden boolean
+function MagicSorterDialogs.DisclaimerUseFurnitureVault_OnEffectivelyShown(control, hidden)
+    control.onToggled = function (self)
+        if GetFurnitureVaultUnavailableReason() then
+            -- Keep the saved choice so it comes back once ESO Plus or the collectible is available again.
+            self.isSelected = false
+            self:Refresh()
+        else
+            MAGIC_SORTER:SetVaultEnabled(self:IsSelected())
+        end
+        RefreshDisclaimerVaultThreshold(self:GetParent())
+    end
+    local icon = control:GetNamedChild("Icon")
+    icon:SetTexture("/esoui/art/icons/housing_uni_fur_housingfurnishingbag001.dds")
+    icon:SetDimensions(116, 116)
+    local label = control:GetNamedChild("Label")
+    label:SetFont("$(GAMEPAD_MEDIUM_FONT)|$(GP_20)")
+    label:SetText("Use Furniture Vault")
+    control:SetAlpha(GetFurnitureVaultUnavailableReason() and 0.4 or 1)
+    control:Toggle(MAGIC_SORTER:IsVaultEnabled() and GetFurnitureVaultUnavailableReason() == nil)
+    RefreshDisclaimerVaultThreshold(control:GetParent())
+end
+
+--- @param control Control
+function MagicSorterDialogs.DisclaimerUseFurnitureVault_OnMouseEnter(control)
+    local tooltipText = "When this option is enabled, any furnishing you own at least the threshold number of copies of " ..
+        "(counting your inventory, the Furniture Vault and your storage homes) is stored in the Furniture Vault.\n\n" ..
+        "Furnishings below the threshold are taken out of the Furniture Vault and sorted into your storage homes."
+    local unavailableReason = GetFurnitureVaultUnavailableReason()
+    if unavailableReason then
+        tooltipText = string.format("%s\n\n|cff6666%s|r", tooltipText, unavailableReason)
+    end
+    ZO_Tooltips_ShowTextTooltip(control, RIGHT, tooltipText)
+end
+
+--- @param control Control
+function MagicSorterDialogs.DisclaimerUseFurnitureVault_OnMouseExit(control)
+    ZO_Tooltips_HideTextTooltip()
+end
+
+--- @param control LabelControl
+function MagicSorterDialogs.DisclaimerVaultThresholdValue_OnMouseEnter(control)
+    ZO_Tooltips_ShowTextTooltip(control, BOTTOM, string.format("Furnishings with %d or more copies are stored in the Furniture Vault.", MAGIC_SORTER:GetVaultThreshold()))
+end
+
+--- @param control LabelControl
+function MagicSorterDialogs.DisclaimerVaultThresholdValue_OnMouseExit(control)
+    ZO_Tooltips_HideTextTooltip()
+end
+
+--- @param control MagicSorter_Button
+local function RefreshDisclaimerRetrieveTo(control)
+    local label = control:GetNamedChild("Label")
+    label:SetText(string.format("Retrieve To: %s", MAGIC_SORTER:GetRetrieveToBagDisplayName(MAGIC_SORTER:GetRetrieveToBag())))
+    control:SetAlpha(MAGIC_SORTER:IsAutomaticStorageRunning() and 0.4 or 1)
+end
+
+--- @param control MagicSorter_Button
+--- @param hidden boolean
+function MagicSorterDialogs.DisclaimerRetrieveTo_OnEffectivelyShown(control, hidden)
+    control.tooltip = "Where furnishings go when you pick them up in the housing editor. Left-click for the next option and right-click for the previous one, without opening the housing editor.\n\n" ..
+        "While sorting, Magic Sorter always uses your Inventory and puts this choice back when the sort stops."
+    RefreshDisclaimerRetrieveTo(control)
+end
+
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
+function MagicSorterDialogs.DisclaimerRetrieveTo_OnMouseDown(control, button, ctrl, alt, shift, command)
+    if button ~= MOUSE_BUTTON_INDEX_LEFT and button ~= MOUSE_BUTTON_INDEX_RIGHT then
+        return
+    end
+    MAGIC_SORTER:CycleRetrieveToBag(button == MOUSE_BUTTON_INDEX_RIGHT)
+    RefreshDisclaimerRetrieveTo(control)
+end
+
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
+function MagicSorterDialogs.DisclaimerVaultThresholdDecrease_OnMouseDown(control, button, ctrl, alt, shift, command)
+    MAGIC_SORTER:SetVaultThreshold(MAGIC_SORTER:GetVaultThreshold() - 1)
+    RefreshDisclaimerVaultThreshold(control:GetParent())
+end
+
+--- @param control MagicSorter_Button
+--- @param button MouseButtonIndex
+--- @param ctrl boolean
+--- @param alt boolean
+--- @param shift boolean
+--- @param command boolean
+function MagicSorterDialogs.DisclaimerVaultThresholdIncrease_OnMouseDown(control, button, ctrl, alt, shift, command)
+    MAGIC_SORTER:SetVaultThreshold(MAGIC_SORTER:GetVaultThreshold() + 1)
+    RefreshDisclaimerVaultThreshold(control:GetParent())
+end
+
 --- @param control MagicSorter_Button
 --- @param button MouseButtonIndex
 --- @param ctrl boolean
@@ -1645,7 +1772,7 @@ function MagicSorterDialogs.StorageProgress_OnInitialized(control)
         control.statusLabel:SetText(control.message)
         control.suspendButtonLabel:SetText(control.isActive and "Suspend" or "Resume")
         control.activeWarning:SetHidden(not control.isActive)
-        eventManager:RegisterForUpdate(MAGIC_SORTER.EventDescriptor .. "RefreshStatusDetail", C.STORAGE_PROGRESS_REFRESH_INTERVAL_MS, MagicSorter_StorageProgressDetail.RefreshStatusDetail)
+        MagicSorter_StorageProgressDetail:QueueRefreshStatusDetail()
     end
     control.SetMessage = function (self, message)
         self.message = message
@@ -1669,6 +1796,9 @@ function MagicSorterDialogs.StorageProgress_OnInitialized(control)
     control.OnExpandCollapseDetails = function ()
         control.detailsCollapsed = not control.detailsCollapsed
         MagicSorter_StorageProgressDetail:SetHidden(control.detailsCollapsed)
+        if not control.detailsCollapsed then
+            MagicSorter_StorageProgressDetail.RefreshStatusDetail()
+        end
         if control.showDetailsButton then
             control.showDetailsButton:SetHidden(not control.detailsCollapsed)
             control.hideDetailsButton:SetHidden(control.detailsCollapsed)
@@ -1688,6 +1818,7 @@ function MagicSorterDialogs.StorageProgress_OnEffectivelyShown(control, hidden)
     end
     if not control.detailsCollapsed then
         MagicSorter_StorageProgressDetail:SetHidden(false)
+        MagicSorter_StorageProgressDetail.RefreshStatusDetail()
     end
 end
 
@@ -1779,6 +1910,7 @@ function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
         logTabButton:SetInactive()
         myself.actionLogScrollContainer:SetHidden(true)
         myself.detailScrollContainer:SetHidden(false)
+        myself.RefreshStatusDetail()
     end
     logTabButton.onMouseDown = function (self)
         detailTabButton:SetInactive()
@@ -1796,13 +1928,26 @@ function MagicSorterDialogs.StorageProgressDetail_OnInitialized(control)
     --- @diagnostic disable-next-line: missing-parameter
     headerRow:SetAnchor(TOPLEFT)
     headerRow:SetHidden(false)
+    -- Sort events arrive faster than the refresh interval, so an already queued refresh is never re-registered;
+    -- re-registering on every event could keep pushing the refresh back for as long as the sort stays in one house.
+    control.QueueRefreshStatusDetail = function (self)
+        if self.isStatusDetailRefreshQueued then
+            return
+        end
+        self.isStatusDetailRefreshQueued = true
+        eventManager:RegisterForUpdate(MAGIC_SORTER.EventDescriptor .. "RefreshStatusDetail", C.STORAGE_PROGRESS_REFRESH_INTERVAL_MS, self.RefreshStatusDetail)
+    end
     control.RefreshStatusDetail = function ()
         eventManager:UnregisterForUpdate(MAGIC_SORTER.EventDescriptor .. "RefreshStatusDetail")
-        if control.detailPanel:IsHidden() then
+        control.isStatusDetailRefreshQueued = false
+        if control.detailScrollContainer:IsControlHidden() then
+            return
+        end
+        local sortManager = MAGIC_SORTER:GetSortManager()
+        if not sortManager:HasStorageHouseConfiguration() then
             return
         end
         local houses = {}
-        local sortManager = MAGIC_SORTER:GetSortManager()
         for _, house in pairs(MAGIC_SORTER:GetStorageHouses()) do
             local houseId = house.houseId
             local removables = sortManager:GetHouseRemovables(houseId)
