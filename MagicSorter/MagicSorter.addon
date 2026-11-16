@@ -2,16 +2,17 @@
 ## Description: Easy and automatic storage of your unused furniture in your unused houses.
 ## Author: @Architectura
 ## APIVersion: 101051 101052
-## AddOnVersion: 28
-## Version: 28
+## AddOnVersion: 29
+## Version: 29
 ## SavedVariables: MagicSorter
-## OptionalDependsOn: LibDebugLogger>=307
+## OptionalDependsOn: LibDebugLogger Taneth
 
 function_util.lua
 debuglogger.lua
 inventorymanager.lua
 sortmanager.lua
 magicsorter.lua
+tests/ingame.lua
 dialogs_constants.lua
 dialogs.lua
 dialogs.xml

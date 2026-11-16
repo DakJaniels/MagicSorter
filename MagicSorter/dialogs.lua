@@ -825,10 +825,19 @@ function MagicSorterDialogs.HouseSelection_OnInitialized(control)
                 local age = GetTimeStamp() - lastUpdate
                 local ageHours = zo_min(zo_floor(age / 60 / 60), C.HOUSE_STATS_AGE_HOURS_MAX)
                 local isOld = ageHours >= C.HOUSE_STATS_AGE_HOURS_THRESHOLD
+                local sortManager = MAGIC_SORTER:GetSortManager()
                 local lowImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                 local lowImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                 local highImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                 local highImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                if house.houseId == sortManager:GetHouseId() then
+                    lowImpactUsed = GetNumHouseFurnishingsPlaced(HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM) or 0
+                    lowImpactLimit = GetHouseFurnishingPlacementLimit(house.houseId, HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM) or 0
+                    highImpactUsed = GetNumHouseFurnishingsPlaced(HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or 0
+                    highImpactLimit = GetHouseFurnishingPlacementLimit(house.houseId, HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or 0
+                    isOld = false
+                    unknown = false
+                end
                 optionButton.overlayLabel:SetText(string.format("%d/%d%s", lowImpactUsed, lowImpactLimit, isOld and "*" or ""))
                 if isOld then
                     optionButton.overlayLabel:SetColor(C.HOUSE_STATS_OLD_COLOR_R, C.HOUSE_STATS_OLD_COLOR_G, C.HOUSE_STATS_OLD_COLOR_B, C.ALPHA_FULL)
@@ -1091,10 +1100,19 @@ function MagicSorterDialogs.CategoryAssignment_OnInitialized(control)
                     local age = GetTimeStamp() - lastUpdate
                     local ageHours = zo_min(zo_floor(age / 60 / 60), C.HOUSE_STATS_AGE_HOURS_MAX)
                     local isOld = ageHours >= C.HOUSE_STATS_AGE_HOURS_THRESHOLD
+                    local sortManager = MAGIC_SORTER:GetSortManager()
                     local lowImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                     local lowImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                     local highImpactUsed = houseStats.limits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
                     local highImpactLimit = houseStats.maxLimits[HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM] or C.SCROLL_SLIDER_ZERO_THRESHOLD
+                    if houseId == sortManager:GetHouseId() then
+                        lowImpactUsed = GetNumHouseFurnishingsPlaced(HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM) or 0
+                        lowImpactLimit = GetHouseFurnishingPlacementLimit(houseId, HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM) or 0
+                        highImpactUsed = GetNumHouseFurnishingsPlaced(HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or 0
+                        highImpactLimit = GetHouseFurnishingPlacementLimit(houseId, HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or 0
+                        isOld = false
+                        unknown = false
+                    end
                     local limitText = string.format("%d/%d%s", lowImpactUsed, lowImpactLimit, isOld and "*" or "")
                     houseBox.overlayLabel:SetText(limitText)
                     if isOld then

@@ -19,7 +19,7 @@ function MSorter:Initialize()
 end
 
 function MSorter:InitializeStaticData()
-    self.AddonVersion = 28
+    self.AddonVersion = 29
     self.AddonName = "MagicSorter"
     self.AddonDev = "Architectura"
     self.EventDescriptor = "magicsorter"
@@ -904,10 +904,12 @@ function MSorter:UpdateKeybindStrip(addKeybinds)
     end
 end
 
-function MSorter:OnSortManagerStateChanged(eventType, event, eventMessage)
+function MSorter:OnSortManagerStateChanged(eventType, event, eventMessage, updateStatus)
     local sortProgress = GetControl("MagicSorter_StorageProgress")
     local isRunning = self:IsAutomaticStorageRunning()
-    sortProgress:SetMessage(eventMessage)
+    if updateStatus ~= false then
+        sortProgress:SetMessage(eventMessage)
+    end
     sortProgress:SetState(isRunning)
     if eventType == "STATE" then
         if event == "COMPLETE" then

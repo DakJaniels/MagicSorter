@@ -1,5 +1,12 @@
 # Changelog
 
+## [29] - 2026-11-16
+
+- Feat: The status line stays on one remaining-time total for sorting, lights, and arranging. Per-item lines stay in the action log. Sorting and lights use the 800ms housing tick. Arranging uses the 130ms move tick.
+- Fix: A backpack placement consumes a Furniture Vault copy of that item first. Vault-bound stacks are now placed until the backpack is empty, which needs room for the backpack and vault copies together, and only then put away into the vault.
+- Feat: Taneth suite `/taneth MagicSorter` covers settings, light-state names, item links, vault slot counts, and Retrieve To. For a Rough Cup in both the backpack and the Furniture Vault, it checks the bag counts, that a vault put-away waits until the backpack is empty, that the house has room for both stacks together, and that one backpack placement consumes a vault copy.
+- Fix: The sort reads the current house's Traditional and Special slots from the housing editor before it places. It keeps one slot of a limit free and removes an outbound item of that limit before using the last slot. A Traditional or Special cap stops further placement requests for that tick. The Storage Houses list and its tooltip keep their existing layout.
+
 ## [28] - 2026-11-16
 
 - Feat: Swap to using `KEYBINDINGS_MANAGER:SetChordingAlwaysEnabled(true)` instead of overriding method.
