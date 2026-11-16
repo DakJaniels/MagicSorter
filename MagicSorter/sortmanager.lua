@@ -206,8 +206,8 @@ end
 
 function MSortManager:GetPlacementLocation()
     local x, y, z, heading = GetPlayerWorldPositionInHouse()
-    x, y, z = zo_ceil(x / 10) * 10, zo_ceil(y / 2) * 2, zo_ceil(z / 10) * 10
-    heading = zo_rad(zo_ceil(zo_deg(heading) / 2) * 2)
+    x, y, z = zo_ceil(x * 0.1) * 10, zo_ceil(y * 0.5) * 2, zo_ceil(z * 0.1) * 10
+    heading = zo_rad(zo_ceil(zo_deg(heading) * 0.5) * 2)
     return self.placementX or x, self.placementY or y, self.placementZ or z, self.placementHeading or heading
 end
 
