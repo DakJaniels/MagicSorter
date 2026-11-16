@@ -141,9 +141,7 @@ end
 function MSorter:InitializeKeybinds()
     if not self.initializedKeybinds then
         self.initializedKeybinds = true
-        function KEYBINDINGS_MANAGER:IsChordingAlwaysEnabled()
-            return true
-        end
+        KEYBINDINGS_MANAGER:SetChordingAlwaysEnabled(true)
         self:CreateKeybind(self.KeybindId, KEY_F10, 0, 0, 0, 0)
     end
 end
