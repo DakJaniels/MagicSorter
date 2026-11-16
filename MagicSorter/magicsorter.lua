@@ -19,7 +19,7 @@ function MSorter:Initialize()
 end
 
 function MSorter:InitializeStaticData()
-    self.AddonVersion = 27
+    self.AddonVersion = 28
     self.AddonName = "MagicSorter"
     self.AddonDev = "Architectura"
     self.EventDescriptor = "magicsorter"
@@ -152,6 +152,21 @@ function MSorter:GetVersion()
     return self.AddonVersion
 end
 
+-- Supports both 28 (Version 28) and 28100 (Version 28.1); 28105 becomes Version 28.1.5.
+function MSorter:GetVersionString()
+    local version = self:GetVersion()
+    if version < 1000 then
+        return string.format("Version %d", version)
+    end
+    local majorVersion = zo_floor(version / 1000)
+    local minorVersion = zo_floor((version % 1000) / 100)
+    local patchVersion = version % 100
+    if patchVersion > 0 then
+        return string.format("Version %d.%d.%d", majorVersion, minorVersion, patchVersion)
+    end
+    return string.format("Version %d.%d", majorVersion, minorVersion)
+end
+
 function MSorter:GetConfig()
     return self.Vars.Config
 end
@@ -208,7 +223,7 @@ function MSorter:InitializeDialogs()
     self.dialogs["StorageProgress"] = { control = GetControl("MagicSorter_StorageProgress") }
     self.dialogs["Complete"] = { control = GetControl("MagicSorter_Complete") }
     self.dialogs["ReportInventory"] = { control = GetControl("MagicSorter_ReportInventory") }
-    local version = string.format("Version %.1f", self:GetVersion())
+    local version = self:GetVersionString()
     for dialogName, dialog in pairs(self.dialogs) do
         dialog.name = dialogName
         local versionLabel = dialog.control:GetNamedChild("Version")
