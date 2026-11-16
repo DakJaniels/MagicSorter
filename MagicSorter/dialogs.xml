@@ -2170,10 +2170,15 @@
                            horizontalAlignment="LEFT"
                            verticalAlignment="TOP"
                            maxLineCount="100"
+                           mouseEnabled="true"
+                           linkEnabled="true"
                            text=""
                            tier="NORMAL"
                            layer="CONTROLS"
                            level="1">
+                      <OnLinkMouseUp>
+                        ZO_LinkHandler_OnLinkMouseUp(linkText, button, self)
+                      </OnLinkMouseUp>
                       <Anchor point="TOPLEFT"
                               relativeTo="$(parent)LogScrollPanel"
                               relativePoint="TOPLEFT" />

@@ -1,5 +1,13 @@
 # Changelog
 
+## [30] - 2026-11-16
+
+- Fix: A house where the swap tick places and removes nothing is finished instead of being arranged and sent back into swap. When one slot of a limit remains and nothing of that limit can be picked up, that slot is used for one inbound item.
+- Fix: A sort no longer switches Retrieve To to Inventory. A normal pickup keeps the bag selected on Before We Begin. The selected bag is filled first, and the backpack is used only when that bag is full. Placements are taken from the selected bag first. Only a vault-mode store sets Retrieve To to the Furniture Vault.
+- Fix: Items at or above the vault threshold are not placed back out of the Furniture Vault. That had been placing a vault copy and storing it again on the next tick.
+- Fix: The sorting-time estimate counts one placement per item in a stack. Copies already in the Furniture Vault are not counted as another place-and-store.
+- Feat: Item names in the action log are bracketed item links. Left-click opens the item tooltip.
+
 ## [29] - 2026-11-16
 
 - Feat: The status line stays on one remaining-time total for sorting, lights, and arranging. Per-item lines stay in the action log. Sorting and lights use the 800ms housing tick. Arranging uses the 130ms move tick.

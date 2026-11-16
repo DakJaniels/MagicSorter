@@ -184,7 +184,6 @@ function MSortManager:SetIsRunning(isRunning)
     self.isRunning = isRunning
     if isRunning then
         self:SaveRetrieveToBag()
-        self:SetRetrieveToBag(BAG_BACKPACK)
     else
         self:RestoreRetrieveToBag()
         self.isHousingFurnitureCacheStale = true
@@ -212,13 +211,6 @@ function MSortManager:SaveRetrieveToBag()
     if self.savedRetrieveToBag == nil then
         local retrieveToBag = HousingEditorGetRetrieveToBag()
         self.savedRetrieveToBag = retrieveToBag
-        if retrieveToBag ~= BAG_BACKPACK then
-            local previousBagName = ZO_HousingFurnitureRetrieveToBag:New(retrieveToBag):GetDisplayName()
-            if previousBagName == "" then
-                previousBagName = tostring(retrieveToBag)
-            end
-            self:LogAction(string.format("Retrieve To temporarily set to Inventory (was %s).", previousBagName))
-        end
     end
 end
 
@@ -233,6 +225,33 @@ function MSortManager:RestoreRetrieveToBag()
         self:SetRetrieveToBag(self.savedRetrieveToBag)
         self.savedRetrieveToBag = nil
     end
+end
+
+function MSortManager:GetRetrieveToBag()
+    if self.savedRetrieveToBag ~= nil then
+        return self.savedRetrieveToBag
+    end
+    return HousingEditorGetRetrieveToBag()
+end
+
+-- The player's Retrieve To bag is filled first. The backpack is the overflow.
+function MSortManager:GetNextSortHoldingBag()
+    local retrieveToBag = self:GetRetrieveToBag()
+    if retrieveToBag and retrieveToBag ~= self.InventoryBag and (GetNumBagFreeSlots(retrieveToBag) or 0) > 0 then
+        return retrieveToBag
+    end
+    if (GetNumBagFreeSlots(self.InventoryBag) or 0) > 0 then
+        return self.InventoryBag
+    end
+end
+
+function MSortManager:GetSortHoldingFreeSlots()
+    local freeSlots = GetNumBagFreeSlots(self.InventoryBag) or 0
+    local retrieveToBag = self:GetRetrieveToBag()
+    if retrieveToBag and retrieveToBag ~= self.InventoryBag then
+        freeSlots = freeSlots + (GetNumBagFreeSlots(retrieveToBag) or 0)
+    end
+    return freeSlots
 end
 
 -- Furniture Vault threshold mode: items with at least the threshold number of copies (backpack + vault + storage
@@ -252,6 +271,29 @@ function MSortManager:ResetVaultState()
     self.vaultPlaceFailedItemIds = {}
     self.vaultRemovalAttempts = {}
     self.vaultStageCounts = {}
+    self.retrievedForPlacement = {}
+end
+
+function MSortManager:RecordRetrievedForPlacement(itemId)
+    local unsignedItemId = zo_abs(itemId or 0)
+    if unsignedItemId == 0 then
+        return
+    end
+    self.retrievedForPlacement = self.retrievedForPlacement or {}
+    self.retrievedForPlacement[unsignedItemId] = (self.retrievedForPlacement[unsignedItemId] or 0) + 1
+end
+
+function MSortManager:ConsumeRetrievedForPlacement(itemId)
+    local unsignedItemId = zo_abs(itemId or 0)
+    local retrievedCount = self.retrievedForPlacement and self.retrievedForPlacement[unsignedItemId]
+    if not retrievedCount or retrievedCount <= 0 then
+        return
+    end
+    if retrievedCount == 1 then
+        self.retrievedForPlacement[unsignedItemId] = nil
+    else
+        self.retrievedForPlacement[unsignedItemId] = retrievedCount - 1
+    end
 end
 
 -- Moving furniture never changes the total number of copies, so the totals are created once per sort.
@@ -409,7 +451,7 @@ function MSortManager:HasVaultWorkInCurrentHouse()
     for _, item in ipairs(self:GetVaultDepositList()) do
         local unsignedItemId = zo_abs(item.itemId)
         local copiesToStage = self:CountItemCopies(self.InventoryBag, unsignedItemId) + self:CountItemCopies(BAG_FURNITURE_VAULT, unsignedItemId)
-        if copiesToStage > 0 and (self:GetHouseCapacity(houseId, item.limitType) or 0) >= copiesToStage and self:DoesVaultHaveRoomFor(unsignedItemId) then
+        if copiesToStage > 0 and (self:GetHouseCapacity(houseId, item.limitType) or 0) > copiesToStage and self:DoesVaultHaveRoomFor(unsignedItemId) then
             return true
         end
     end
@@ -693,9 +735,9 @@ function MSortManager:TurnOffPlacedLight(furnitureId)
         return
     end
     self.lightsHandledFurnitureIds[furnitureIdString] = true
-    local itemName = GetPlacedHousingFurnitureInfo(furnitureId)
+    local itemLink = GetPlacedFurnitureLink(furnitureId, LINK_STYLE_BRACKETS)
     local lightsEvent = self:GetDataManager():GetLightsMode() == "on" and "ON" or "OFF"
-    self:OnStateChanged("LIGHTS", lightsEvent, itemName or "light")
+    self:OnStateChanged("LIGHTS", lightsEvent, itemLink or "light")
 end
 
 function MSortManager:Start(resume)
@@ -908,7 +950,7 @@ function MSortManager:OnInventorySpaceCheck()
         unregister = true
     else
         local minimumSlots = self.minimumSlots or 1
-        local numFreeSlots = GetNumBagFreeSlots(self.InventoryBag)
+        local numFreeSlots = self:GetSortHoldingFreeSlots()
         if numFreeSlots >= minimumSlots then
             self:Resume()
             unregister = true
@@ -927,7 +969,7 @@ end
 
 function MSortManager:ValidateInventorySpace(minimumSlots)
     minimumSlots = minimumSlots or 1
-    local numFreeSlots = GetNumBagFreeSlots(self.InventoryBag)
+    local numFreeSlots = self:GetSortHoldingFreeSlots()
     if numFreeSlots < minimumSlots then
         self:Suspend()
         self:OnStateChanged("EXCEPTION", "INVENTORY_FULL", minimumSlots)
@@ -1236,15 +1278,16 @@ function MSortManager:HasPlaceableFurnitureForLimit(houseId, limitType)
     return false
 end
 
-function MSortManager:RemoveOneOutboundItem(removeList, limitType, freeSlots)
+function MSortManager:RemoveOneOutboundItem(removeList, limitType)
     for _, item in ipairs(removeList) do
         if item.limitType == limitType and item.furnitureId then
             if item.toVault then
                 if self:RemoveFurniture(StringToId64(item.furnitureId), BAG_FURNITURE_VAULT) then
                     return true
                 end
-            elseif freeSlots > 1 then
-                if self:RemoveFurniture(StringToId64(item.furnitureId)) then
+            else
+                local holdingBagId = self:GetNextSortHoldingBag()
+                if holdingBagId and self:RemoveFurniture(StringToId64(item.furnitureId), holdingBagId) then
                     return true
                 end
             end
@@ -1420,6 +1463,9 @@ end
 
 do
     local function PlaceableComparer(a, b)
+        if a.holdingPriority ~= b.holdingPriority then
+            return a.holdingPriority < b.holdingPriority
+        end
         return a.stackSize < b.stackSize
     end
 
@@ -1429,33 +1475,60 @@ do
         local numSlots = GetBagSize(bagId)
         local capacityTraditional = self:GetHouseCapacity(houseId, HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM) or 0
         local capacitySpecial = self:GetHouseCapacity(houseId, HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM) or 0
-        local function AddPlaceable(sourceBagId, slotIndex, categoryId, subcategoryId, themeId, limitType, stackSize)
+        local isVaultModeActive = self:IsVaultModeActive()
+        local function AddPlaceable(sourceBagId, slotIndex, categoryId, subcategoryId, themeId, limitType, stackSize, holdingPriority)
             if not self:IsFurniturePlaceableInHouse(houseId, categoryId, subcategoryId, themeId) or (filterLimitType and filterLimitType ~= limitType) then
                 return
             end
             if limitType == HOUSING_FURNISHING_LIMIT_TYPE_LOW_IMPACT_ITEM and capacityTraditional and capacityTraditional > 0 then
                 capacityTraditional = capacityTraditional - stackSize
-                table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = sourceBagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType })
+                table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = sourceBagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType, holdingPriority = holdingPriority or 2 })
             elseif limitType == HOUSING_FURNISHING_LIMIT_TYPE_HIGH_IMPACT_ITEM and capacitySpecial and capacitySpecial > 0 then
                 capacitySpecial = capacitySpecial - stackSize
-                table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = sourceBagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType })
+                table.insert(list, { categoryId = categoryId, subcategoryId = subcategoryId, themeId = themeId, bagId = sourceBagId, slotIndex = slotIndex, stackSize = stackSize, limitType = limitType, holdingPriority = holdingPriority or 2 })
             end
         end
-        local isVaultModeActive = self:IsVaultModeActive()
+        local function AddBagPlaceables(sourceBagId, holdingPriority)
+            local placedFromBag = {}
+            for slotIndex in ZO_IterateBagSlots(sourceBagId) do
+                local itemId = GetItemId(sourceBagId, slotIndex)
+                local unsignedItemId = zo_abs(itemId or 0)
+                local retrievedCount = self.retrievedForPlacement and self.retrievedForPlacement[unsignedItemId] or 0
+                local alreadyPlaced = placedFromBag[unsignedItemId] or 0
+                local remainingRetrieved = retrievedCount - alreadyPlaced
+                if remainingRetrieved > 0 then
+                    local categoryId, subcategoryId, themeId = self:GetFurnitureCategoryByBagAndSlot(sourceBagId, slotIndex)
+                    if categoryId and subcategoryId and self:IsFurniturePlaceable(sourceBagId, slotIndex) then
+                        if not (isVaultModeActive and self:IsVaultBoundItem(itemId)) then
+                            local stackSize = zo_min(GetSlotStackSize(sourceBagId, slotIndex) or 0, remainingRetrieved)
+                            if stackSize > 0 then
+                                local _, _, _, limitType = GetFurnitureDataInfo(GetItemFurnitureDataId(sourceBagId, slotIndex))
+                                AddPlaceable(sourceBagId, slotIndex, categoryId, subcategoryId, themeId, limitType, stackSize, holdingPriority)
+                                placedFromBag[unsignedItemId] = alreadyPlaced + stackSize
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        local retrieveToBag = self:GetRetrieveToBag()
+        if retrieveToBag and retrieveToBag ~= self.InventoryBag then
+            AddBagPlaceables(retrieveToBag, 1)
+        end
         for slotIndex = 0, numSlots - 1 do
             local categoryId, subcategoryId, themeId = self:GetFurnitureCategoryByBagAndSlot(bagId, slotIndex)
             if categoryId and subcategoryId and self:IsFurniturePlaceable(bagId, slotIndex) then
                 -- Vault-bound backpack copies are handled by GetVaultDepositList instead.
                 if not (isVaultModeActive and self:IsVaultBoundItem(GetItemId(bagId, slotIndex))) then
                     local _, _, _, limitType = GetFurnitureDataInfo(GetItemFurnitureDataId(bagId, slotIndex))
-                    AddPlaceable(bagId, slotIndex, categoryId, subcategoryId, themeId, limitType, GetSlotStackSize(bagId, slotIndex))
+                    AddPlaceable(bagId, slotIndex, categoryId, subcategoryId, themeId, limitType, GetSlotStackSize(bagId, slotIndex), 2)
                 end
             end
         end
-        if isVaultModeActive and self:GetItemTotals() then
+        if isVaultModeActive and retrieveToBag ~= BAG_FURNITURE_VAULT and self:GetItemTotals() then
             for _, vaultSlot in ipairs(self:GetVaultSlots()) do
                 if not self:IsVaultBoundItem(vaultSlot.itemId) and not self.vaultPlaceFailedItemIds[zo_abs(vaultSlot.itemId)] then
-                    AddPlaceable(BAG_FURNITURE_VAULT, vaultSlot.slotIndex, vaultSlot.categoryId, vaultSlot.subcategoryId, vaultSlot.themeId, vaultSlot.limitType, vaultSlot.stackSize)
+                    AddPlaceable(BAG_FURNITURE_VAULT, vaultSlot.slotIndex, vaultSlot.categoryId, vaultSlot.subcategoryId, vaultSlot.themeId, vaultSlot.limitType, vaultSlot.stackSize, 2)
                 end
             end
         end
@@ -1488,7 +1561,7 @@ end
 function MSortManager:GetNextHouse()
     self:WriteDebug("Current House (%d)", self:GetHouseId() or 0)
     self:WriteDebugCall("GetNextHouse")
-    local freeSlots = zo_max(0, GetNumBagFreeSlots(self.InventoryBag) - 1)
+    local freeSlots = self:GetSortHoldingFreeSlots()
     local currentHouse = self:GetCurrentHouse()
     local visitedPlaceables, visitedPlaceableHouse = 0, nil
     local visitedRemovables, visitedRemovableHouse = 0, nil
@@ -1497,6 +1570,7 @@ function MSortManager:GetNextHouse()
     local houses = {}
     self:GetRemovableFurnitureList()
     for _, house in ipairs(self.houseList) do
+        if house.houseId ~= self.noProgressHouseId then
         if not self:HasVisitedHouse(house.houseId) then
             unvisited = unvisited + 1
             local placeableCount = self:GetPlaceableFurnitureCountForHouse(house.houseId, nil, true) or 0
@@ -1520,6 +1594,7 @@ function MSortManager:GetNextHouse()
                 visitedRemovables = removableCount
             end
         end
+        end
     end
     local targetHouse
     if unvisitedHouse then
@@ -1539,7 +1614,7 @@ function MSortManager:GetNextHouse()
     if not targetHouse and self:GetDataManager():IsLightChangeEnabled() then
         local currentHouseId = self:GetHouseId()
         for _, house in ipairs(self.houseList) do
-            if house.houseId ~= currentHouseId and not self.lightsFinishedHouseIds[house.houseId] then
+            if house.houseId ~= currentHouseId and house.houseId ~= self.noProgressHouseId and not self.lightsFinishedHouseIds[house.houseId] then
                 return house
             end
         end
@@ -1755,8 +1830,8 @@ function MSortManager:GetLightsToTurnOff()
         if not self.lightsHandledFurnitureIds[furnitureIdString] then
             local categoryId, subcategoryId = self:GetFurnitureCategoryByFurnitureId(furnitureId)
             if self:IsLightingFurniture(categoryId, subcategoryId) and GetPlacedHousingFurnitureNumObjectStates(furnitureId) > 1 then
-                local itemName = GetPlacedHousingFurnitureInfo(furnitureId)
-                table.insert(lights, { furnitureId = furnitureIdString, name = itemName })
+                local itemLink = GetPlacedFurnitureLink(furnitureId, LINK_STYLE_BRACKETS)
+                table.insert(lights, { furnitureId = furnitureIdString, name = itemLink or "" })
             end
         end
         furnitureId = GetNextPlacedHousingFurnitureId(furnitureId)
@@ -1797,7 +1872,9 @@ function MSortManager:CountRemainingSortActions()
     local actions = 0
     local placeList = self:GetPlaceableFurnitureList()
     if placeList then
-        actions = actions + #placeList
+        for _, placeable in ipairs(placeList) do
+            actions = actions + (placeable.stackSize or 1)
+        end
     end
     local removeList = self:GetOutboundFurnitureList() or {}
     for _, item in ipairs(removeList) do
@@ -1810,8 +1887,11 @@ function MSortManager:CountRemainingSortActions()
         local unsignedItemId = zo_abs(item.itemId)
         if not seenItemIds[unsignedItemId] and self:IsVaultBoundItem(unsignedItemId) then
             seenItemIds[unsignedItemId] = true
-            local copiesToStage = self:CountItemCopies(self.InventoryBag, unsignedItemId) + self:CountItemCopies(BAG_FURNITURE_VAULT, unsignedItemId)
-            actions = actions + (copiesToStage * 2)
+            -- A backpack copy is placed once, then stored. Copies already in the vault are not staged again.
+            local backpackCopies = self:CountItemCopies(self.InventoryBag, unsignedItemId)
+            if backpackCopies > 0 then
+                actions = actions + (backpackCopies * 2)
+            end
         end
     end
     for _, item in ipairs(removeList) do
@@ -1907,6 +1987,10 @@ function MSortManager:OrganizeHouse(skipFurnitureOrganization, skipCurrentHouse)
         self:JumpToAnyHouse()
         return
     end
+    if not skipCurrentHouse and self.noProgressHouseId == house.houseId then
+        self:FinishHouse()
+        return
+    end
     if self:GetDataManager():IsLightChangeEnabled() and #self:GetLightsToTurnOff() > 0 then
         self:SwapFurniture(house)
         return
@@ -1920,9 +2004,8 @@ function MSortManager:OrganizeHouse(skipFurnitureOrganization, skipCurrentHouse)
         if not self:ValidateInventorySpace() then
             return
         end
-        local numFreeSlots = GetNumBagFreeSlots(self.InventoryBag)
         local removalList = self:GetOutboundFurnitureList()
-        if #removalList ~= 0 and numFreeSlots > 1 then
+        if #removalList ~= 0 and self:GetNextSortHoldingBag() then
             self:SwapFurniture(house)
             return
         end
@@ -1960,7 +2043,6 @@ function MSortManager:SwapAnyItem()
         self:JumpToHouse(self.swapHouse)
         return
     end
-    local numFreeSlots = GetNumBagFreeSlots(self.InventoryBag)
     local houseId = self:GetHouseId()
     self:ShowSortRemainingStatus()
     if self:TurnOffOneLight() then
@@ -1980,7 +2062,7 @@ function MSortManager:SwapAnyItem()
     for limitType = HOUSING_FURNISHING_LIMIT_TYPE_ITERATION_BEGIN, HOUSING_FURNISHING_LIMIT_TYPE_ITERATION_END do
         local remaining = self:GetHouseCapacity(houseId, limitType) or 0
         if remaining <= 1 and self:HasPlaceableFurnitureForLimit(houseId, limitType) then
-            if self:RemoveOneOutboundItem(removeList, limitType, numFreeSlots) then
+            if self:RemoveOneOutboundItem(removeList, limitType) then
                 return
             end
         end
@@ -1989,7 +2071,7 @@ function MSortManager:SwapAnyItem()
     local placeList = self:GetPlaceableFurnitureList()
     for _, item in ipairs(placeList) do
         local remaining = self:GetHouseCapacity(houseId, item.limitType) or 0
-        if remaining > 1 then
+        if remaining > 0 then
             local placed = self:PlaceFurniture(item.bagId, item.slotIndex)
             if placed ~= false then
                 return
@@ -2006,7 +2088,7 @@ function MSortManager:SwapAnyItem()
             local copiesToStage = self:CountItemCopies(self.InventoryBag, unsignedItemId) + self:CountItemCopies(BAG_FURNITURE_VAULT, unsignedItemId)
             local remaining = self:GetHouseCapacity(houseId, item.limitType) or 0
             if copiesToStage > 0 and remaining <= copiesToStage then
-                if self:RemoveOneOutboundItem(removeList, item.limitType, numFreeSlots) then
+                if self:RemoveOneOutboundItem(removeList, item.limitType) then
                     return
                 elseif remaining < copiesToStage then
                     self:MarkVaultFailed(unsignedItemId, "the house does not have room for the backpack and vault copies together")
@@ -2023,10 +2105,11 @@ function MSortManager:SwapAnyItem()
     if not self:ValidateInventorySpace() then
         return
     end
-    if numFreeSlots > 1 then
+    local removalBagId = self:GetNextSortHoldingBag()
+    if removalBagId then
         for _, item in ipairs(removeList) do
             if not item.toVault then
-                if item.furnitureId and self:RemoveFurniture(StringToId64(item.furnitureId)) then
+                if item.furnitureId and self:RemoveFurniture(StringToId64(item.furnitureId), removalBagId) then
                     return
                 end
                 break
@@ -2034,6 +2117,7 @@ function MSortManager:SwapAnyItem()
         end
     end
     EVENT_MANAGER:UnregisterForUpdate(self.EventDescriptors["SWAP"])
+    self.noProgressHouseId = houseId
     self:OrganizeHouse(false, true)
 end
 
@@ -2119,8 +2203,8 @@ function MSortManager:RetryJumpToHouse()
 end
 
 function MSortManager:RemoveFurniture(furnitureId, destinationBagId)
-    destinationBagId = destinationBagId or BAG_BACKPACK
-    self:WriteDebugCall("RemoveFurniture", furnitureId and Id64ToString(furnitureId) or "nil", destinationBagId)
+    local isVaultRemoval = destinationBagId == BAG_FURNITURE_VAULT
+    self:WriteDebugCall("RemoveFurniture", furnitureId and Id64ToString(furnitureId) or "nil", destinationBagId or HousingEditorGetRetrieveToBag())
     if not self:CheckState() then
         return false
     end
@@ -2130,10 +2214,9 @@ function MSortManager:RemoveFurniture(furnitureId, destinationBagId)
     local categoryName = self:GetFurnitureCategoryName(self:GetFurnitureCategoryByFurnitureId(furnitureId))
     local furnitureName, _, furnitureDataId = GetPlacedHousingFurnitureInfo(furnitureId)
     local _, _, _, limitType = GetFurnitureDataInfo(furnitureDataId)
-    local itemLink = GetPlacedFurnitureLink(furnitureId, LINK_STYLE_DEFAULT)
-    local itemName = string.format("%s\n(%s)", GetItemLinkName(itemLink) or "item", categoryName or "Unknown Category")
+    local itemLink = GetPlacedFurnitureLink(furnitureId, LINK_STYLE_BRACKETS)
+    local itemName = string.format("%s\n(%s)", itemLink or "item", categoryName or "Unknown Category")
     local itemId = GetItemLinkItemId(itemLink)
-    local isVaultRemoval = destinationBagId == BAG_FURNITURE_VAULT
     if isVaultRemoval then
         local furnitureKey = Id64ToString(furnitureId)
         local removalAttempts = (self.vaultRemovalAttempts[furnitureKey] or 0) + 1
@@ -2143,17 +2226,23 @@ function MSortManager:RemoveFurniture(furnitureId, destinationBagId)
             return false
         end
     end
-    -- The intent to remove an item is sufficient to clear the associated limit type's At Capacity flag.
-    -- Retrieve To is left on the destination until the next removal sets its own, because the removal may complete
-    -- after this call returns.
-    self:SetRetrieveToBag(destinationBagId)
+    -- A normal pickup uses the Retrieve To the player already set. v25 did not change it.
+    -- Only a vault-mode store points Retrieve To at the Furniture Vault.
+    if isVaultRemoval then
+        self:SetRetrieveToBag(BAG_FURNITURE_VAULT)
+    end
     self:WriteDebug("Retrieve To for removal: %s", tostring(HousingEditorGetRetrieveToBag()))
     local result = HousingEditorRequestRemoveFurniture(furnitureId)
     if result == HOUSING_REQUEST_RESULT_SUCCESS then
+        self.noProgressHouseId = nil
         if isVaultRemoval then
             self:InvalidateVaultSlots()
             self:OnStateChanged("SWAP", "VAULT", itemName)
         else
+            local retrieveToBag = HousingEditorGetRetrieveToBag()
+            if retrieveToBag and retrieveToBag ~= self.InventoryBag then
+                self:RecordRetrievedForPlacement(itemId)
+            end
             self:OnStateChanged("SWAP", "REMOVE", itemName)
         end
         return true
@@ -2173,7 +2262,7 @@ function MSortManager:PlaceFurniture(bagId, slotIndex, isStagingForVault)
         return false
     end
     local categoryName = self:GetFurnitureCategoryName(self:GetFurnitureCategoryByBagAndSlot(bagId, slotIndex))
-    local itemName = string.format("%s\n(%s)", GetItemName(bagId, slotIndex) or "item", categoryName or "Unknown Category")
+    local itemName = string.format("%s\n(%s)", GetItemLink(bagId, slotIndex, LINK_STYLE_BRACKETS) or "item", categoryName or "Unknown Category")
     local x, y, z, yaw = self:GetPlacementLocation()
     local offsetX, offsetZ = Rotate2D(0, -800, yaw)
     x, z = x + offsetX, z + offsetZ
@@ -2183,12 +2272,17 @@ function MSortManager:PlaceFurniture(bagId, slotIndex, isStagingForVault)
     local itemId = GetItemId(bagId, slotIndex)
     if limitType then
         local remaining = self:GetHouseCapacity(self:GetHouseId(), limitType) or 0
-        if remaining <= 1 then
+        if remaining < 1 then
             return false
         end
     end
     local result = HousingEditorRequestItemPlacement(bagId, slotIndex, x, y, z, 0, yaw, 0)
     if result == HOUSING_REQUEST_RESULT_SUCCESS then
+        self.noProgressHouseId = nil
+        local retrieveToBag = self:GetRetrieveToBag()
+        if retrieveToBag and bagId == retrieveToBag and bagId ~= self.InventoryBag then
+            self:ConsumeRetrievedForPlacement(itemId)
+        end
         self.skipNextPlacedLightOff = isStagingForVault == true
         if bagId == BAG_FURNITURE_VAULT then
             self:InvalidateVaultSlots()
